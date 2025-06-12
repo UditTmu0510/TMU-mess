@@ -20,13 +20,18 @@ app.use(cors({
     credentials: true
 }));
 
+// Trust proxy for rate limiting
+app.set('trust proxy', 1);
+
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // limit each IP to 100 requests per windowMs
     message: {
         error: 'Too many requests from this IP, please try again later.'
-    }
+    },
+    standardHeaders: true,
+    legacyHeaders: false
 });
 app.use(limiter);
 
@@ -46,9 +51,9 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-// app.use('/api/meals', mealRoutes);
-// app.use('/api/bookings', bookingRoutes);
-// app.use('/api/admin', adminRoutes);
+app.use('/api/meals', mealRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {
