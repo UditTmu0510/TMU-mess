@@ -1,0 +1,28 @@
+modules = ["nodejs-20"]
+
+[nix]
+channel = "stable-24_05"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "TMU Mess API Server"
+
+[[workflows.workflow]]
+name = "TMU Mess API Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install && node server.js"
+waitForPort = 5000
+
+[deployment]
+run = ["sh", "-c", "npm install && node server.js"]
