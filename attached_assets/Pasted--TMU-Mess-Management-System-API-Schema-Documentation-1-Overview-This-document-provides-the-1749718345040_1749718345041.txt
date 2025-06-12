@@ -1,0 +1,554 @@
+# TMU Mess Management System: API & Schema Documentation
+
+## 1. Overview
+
+This document provides the complete technical specification for the **TMU Mess Management System**. The system is designed to manage meal bookings, subscriptions, fines, and user administration for students, employees, and guests of the university.
+
+**Core Technologies:**
+* **Database:** MongoDB
+* **Backend:** Node.js with Express.js
+* **Authentication:** JSON Web Tokens (JWT)
+
+---
+
+## 2. Database Schema (MongoDB)
+
+This section details the schema for each collection in the `tmu_app` database. The schemas are enforced using MongoDB's native `$jsonSchema` validator.
+
+### 2.1. `users` Collection
+
+Stores all user accounts, including students, employees, HODs, and mess staff.
+
+**Schema Definition:**
+```json
+{
+"<span class="math-inline">jsonSchema"\: \{
+"bsonType"\: "object",
+"required"\: \[
+"tmu\_code", "user\_type", "name", "email", "phone", "password\_hash"
+\],
+"properties"\: \{
+"tmu\_code"\: \{ "bsonType"\: "string" \},
+"student\_code"\: \{ "bsonType"\: \["string", "null"\] \},
+"user\_type"\: \{ "enum"\: \["student", "employee", "mess\_staff", "hod"\] \},
+<5\>"name"\: \{
+"bsonType"\: "object",
+"required"\: \["first", "last"\],
+"properties"\: \{
+"first"\: \{ "bsonType"\: "string" \},
+"last"\: \{ "bsonType"\: "string" \}
+\}
+\},
+"email"\: \{ "bsonType"\: "string", "pattern"\:</5\> "^\.\+@\.\+\\\\\.\.\+</span>" },
+"phone": { "bsonType": "string" },
+"profile_image": { "bsonType": ["string", "null"] },
+"password_hash": { "bsonType": "string" },
+"is_active": { "bsonType": "bool" },
+"department": { "bsonType": ["string", "null"] },
+"mess_offense": {
+"bsonType": "object",
+"description": "Tracks monthly meal offenses.",
+"properties": {
+"count": { "bsonType": "int" },
+"month_key": { "bsonType": "string" }
+}
+},
+"created_at": { "bsonType": "date" },
+"updated_at": { "bsonType": "date" }
+}
+}
+}
+```
+
+**Indexes:**
+```javascript
+db.users.createIndex({ tmu_code: 1 }, { name: "tmu_code_unique", unique: true }); db.users.createIndex({ email: 1 }, { name: "email_unique", unique: true }); db.users.createIndex({ student_code: 1 }, { name: "student_code_unique_sparse", unique: true, sparse: true }); db.users.createIndex({ user_type: 1 }, { name: "user_type_idx" }); db.users.createIndex({ department: 1 }, { name: "department_idx" });
+```
+
+### 2.2. `meal_timings` Collection
+
+A configuration collection that defines the schedule and cost for each meal type. The `_id` is the meal type itself for fast lookups.
+
+**Schema Definition:**
+```json
+{
+"<span class="math-inline">jsonSchema"\: \{
+"bsonType"\: "object",
+"required"\: \[
+"\_id", "start\_time", "end\_time", "confirmation\_deadline\_hours",
+"confirmation\_deadline\_description", "per\_meal\_cost"
+\],
+"properties"\: \{
+"\_id"\: \{ "enum"\: \["breakfast", "lunch", "snacks", "dinner"\] \},
+"start\_time"\: \{ "bsonType"\: "string", "pattern"\: "^\(\[0\-1\]\[0\-9\]\|2\[0\-3\]\)\:\[0\-5\]\[0\-9\]\:\[0\-5\]\[0\-9\]</span>" },
+"end_time": { "bsonType": "string", "pattern": "^([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$" },
+"confirmation_deadline_hours": { "bsonType": "int" },
+"confirmation_deadline_description": { "bsonType": "string" },
+"per_meal_cost": { "bsonType": "decimal" },
+"is_active": { "bsonType": "bool" },
+"updated_at": { "bsonType": "date" },
+"updated_by": { "bsonType": "objectId" }
+}
+}
+}
+```
+
+**Indexes:**
+```javascript
+db.meal_timings.createIndex({ is_active: 1 });
+```
+
+### 2.3. `meal_confirmations` Collection
+
+Logs every meal confirmation made by a user for a specific date and meal type. This collection is the source of truth for attendance.
+
+**Schema Definition:**
+```json
+{
+"$jsonSchema": {
+"bsonType": "object",
+"required": ["user_id", "meal_date", "meal_type", "confirmed_at"],
+"properties": {
+"user_id": { "bsonType": "objectId" },
+"meal_date": { "bsonType": "date" },
+"meal_type": { "enum": ["breakfast", "lunch", "snacks", "dinner"] },
+"confirmed_at": { "bsonType": "date" },
+"attended": { "bsonType": ["bool", "null"] },
+"qr_scanned_at": { "bsonType": "date" },
+"qr_scanner_id": { "bsonType": "objectId" },
+"fine_applied": { "bsonType": "decimal" },
+"notes": { "bsonType": "string" },
+"created_at": { "bsonType": "date" }
+}
+}
+}
+```
+
+**Indexes:**
+```javascript
+db.meal_confirmations.createIndex({ user_id: 1, meal_date: 1, meal_type: 1 }, { name: "unique_meal_confirmation_idx", unique: true }); db.meal_confirmations.createIndex({ meal_date: 1 }, { name: "meal_date_idx" }); db.meal_confirmations.createIndex({ user_id: 1, meal_date: 1 }, { name: "user_date_idx" }); db.meal_confirmations.createIndex({ attended: 1, qr_scanned_at: 1 }, { name: "attendance_idx" });
+```
+
+### 2.4. `fines` Collection
+
+Stores a record of every financial penalty applied to a user.
+
+**Schema Definition:**
+```json
+{
+"$jsonSchema": {
+"bsonType": "object",
+"required": ["user_id", "fine_type", "amount", "reason"],
+"properties": {
+"user_id": { "bsonType": "objectId" },
+"fine_type": { "enum": ["no_show", "late_cancellation", "multiple_offense", "subscription_violation"] },
+"amount": { "bsonType": "decimal" },
+"reason": { "bsonType": "string" },
+"related_confirmation_id": { "bsonType": "objectId" },
+"payment": {
+"bsonType": "object",
+"properties": {
+"is_paid": { "bsonType": "bool" },
+"reference": { "bsonType": "string" },
+"paid_at": { "bsonType": "date" }
+}
+},
+"waiver": {
+"bsonType": "object",
+"properties": {
+"is_waived": { "bsonType": "bool" },
+"waived_by": { "bsonType": "objectId" },
+"reason": { "bsonType": "string" }
+}
+},
+"created_at": { "bsonType": "date" }
+}
+}
+}
+```
+
+**Indexes:**
+```javascript
+db.fines.createIndex({ user_id: 1, "payment.is_paid": 1 }, { name: "user_fines_idx" }); db.fines.createIndex({ fine_type: 1 }, { name: "fine_type_idx" }); db.fines.createIndex({ "payment.is_paid": 1, "payment.paid_at": 1 }, { name: "payment_status_idx" }); db.fines.createIndex({ created_at: 1 }, { name: "created_date_idx" });
+```
+### 2.5. `student_details` Collection
+
+{
+"$jsonSchema": {
+"bsonType": "object",
+"required": [
+"_id", "user_id", "student_code", "enrollment_number", "student_name",
+"college_name", "course_name", "admitted_year", "fathers_name", "mothers_name",
+"date_of_birth", "gender", "category", "type_of_course", "semester_year",
+"permanent_address", "mobile_number", "email_address"
+],
+"properties": {
+"_id": { "bsonType": "int", "description": "Primary Key: Corresponds to student_id" },
+"user_id": { "bsonType": "objectId" },
+"student_code": { "bsonType": "string" },
+"enrollment_number": { "bsonType": "string" },
+"student_name": { "bsonType": "string" },
+"college_name": { "bsonType": "string" },
+"course_name": { "bsonType": "string" },
+"admitted_year": { "bsonType": "string" },
+"fathers_name": { "bsonType": "string" },
+"mothers_name": { "bsonType": ["string", "null"] },
+"date_of_birth": { "bsonType": "date" },
+"gender": { "enum": ["Male", "Female", "Other"] },
+"category": { "bsonType": "string" },
+"type_of_course": { "bsonType": "string" },
+"semester_year": { "bsonType": "string" },
+"permanent_address": {
+"bsonType": "object",
+"required": ["address", "city", "state"],
+"properties": { "address": { "bsonType": "string" }, "city": { "bsonType": "string" }, "state": { "bsonType": "string" } }
+},
+"mobile_number": { "bsonType": "string" },
+"email_address": { "bsonType": "string" },
+"hostel_details": {
+"bsonType": "object",
+"properties": { "name": { "bsonType": "string" }, "room_number": { "bsonType": "string" } }
+}
+}
+}
+}
+
+db.student_details.createIndex({ student_code: 1 }, { unique: true }); db.student_details.createIndex({ enrollment_number: 1 }, { unique: true }); db.student_details.createIndex({ mobile_number: 1 }, { unique: true }); db.student_details.createIndex({ email_address: 1 }, { unique: true }); db.student_details.createIndex({ student_name: 1 }); db.student_details.createIndex({ college_name: 1 }); db.student_details.createIndex({ course_name: 1 }); db.student_details.createIndex({ "hostel_details.name": 1, "hostel_details.room_number": 1 });
+
+### 2.6. `employee_details` Collection
+
+{
+"$jsonSchema": {
+"bsonType": "object",
+"required": [
+"_id", "user_id", "employee_code", "employment_status", "employee_name",
+"employee_type", "unit", "department", "designation", "personal_details",
+"contact"
+],
+"properties": {
+"_id": { "bsonType": "int", "description": "Primary Key: Corresponds to employee_id" },
+"user_id": { "bsonType": "objectId" },
+"employee_code": { "bsonType": "string" },
+"employment_status": { "enum": ["Active", "Inactive", "Suspended", "Terminated"] },
+"employee_name": { "bsonType": "string" },
+"employee_type": { "enum": ["TEACH", "NON-TEACH", "FOURTH", "ADMIN"] },
+"unit": {
+"bsonType": "object",
+"required": ["code", "name"],
+"properties": { "code": { "bsonType": "string" }, "name": { "bsonType": "string" } }
+},
+"department": {
+"bsonType": "object",
+"required": ["code", "name"],
+"properties": { "code": { "bsonType": "string" }, "name": { "bsonType": "string" } }
+},
+"designation": {
+"bsonType": "object",
+"required": ["code", "name"],
+"properties": { "code": { "bsonType": "string" }, "name": { "bsonType": "string" } }
+},
+"contact": {
+"bsonType": "object",
+"required": ["mobile"],
+"properties": { "email": { "bsonType": ["string", "null"] }, "mobile": { "bsonType": "string" } }
+},
+"personal_details": {
+"bsonType": "object",
+"required": ["gender", "marital_status"],
+"properties": {
+"date_of_birth": { "bsonType": ["date", "null"] },
+"father_name": { "bsonType": ["string", "null"] },
+"mother_name": { "bsonType": ["string", "null"] },
+"gender": { "enum": ["Male", "Female", "Other"] },
+"marital_status": { "enum": ["Single", "Married", "Divorced", "Widowed"] }
+}
+}
+}
+}
+}
+
+db.employee_details.createIndex({ employee_code: 1 }, { name: "employee_code_unique", unique: true }); db.employee_details.createIndex({ employee_name: 1 }, { name: "employee_name_idx" }); db.employee_details.createIndex({ employee_type: 1 }, { name: "employee_type_idx" }); db.employee_details.createIndex({ "department.code": 1, "department.name": 1 }, { name: "department_idx" }); db.employee_details.createIndex({ "designation.code": 1, "designation.name": 1 }, { name: "designation_idx" }); db.employee_details.createIndex({ employment_status: 1 }, { name: "employment_status_idx" }); db.employee_details.createIndex({ "unit.code": 1, "unit.name": 1 }, { name: "unit_idx" }); db.employee_details.createIndex({ "contact.mobile": 1 }, { name: "mobile_idx" });
+
+
+### 2.7. `mess_subscriptions'  Collection
+
+{
+"$jsonSchema": {
+"bsonType": "object",
+"required": [
+"user_id", "subscription_type", "meal_types", "monthly_cost", "start_date", "end_date"
+],
+"properties": {
+"user_id": { "bsonType": "objectId" },
+"subscription_type": { "enum": ["hostel_student", "employee_monthly"] },
+"meal_types": {
+"bsonType": "array",
+"items": { "bsonType": "string", "enum": ["breakfast", "lunch", "snacks", "dinner"] }
+},
+"monthly_cost": { "bsonType": "decimal" },
+"start_date": { "bsonType": "date" },
+"end_date": { "bsonType": "date" },
+"status": { "enum": ["active", "expired", "suspended"] },
+"payment_reference": { "bsonType": "string" },
+"created_at": { "bsonType": "date" }
+}
+}
+}
+
+db.mess_subscriptions.createIndex({ user_id: 1, status: 1 }, { name: "user_status_idx" }); db.mess_subscriptions.createIndex({ start_date: 1, end_date: 1 }, { name: "date_range_idx" }); db.mess_subscriptions.createIndex({ subscription_type: 1 }, { name: "subscription_type_idx" });
+
+
+### 2.8  `one_time_bookings' Collection
+
+{
+"$jsonSchema": {
+"bsonType": "object",
+"required": ["booking_type", "meal_date", "meal_type", "amount"],
+"properties": {
+"user_id": { "bsonType": ["objectId", "null"] },
+"booking_type": { "enum": ["employee", "guest"] },
+"meal_date": { "bsonType": "date" },
+"meal_type": { "enum": ["breakfast", "lunch", "snacks", "dinner"] },
+"guest_details": {
+"bsonType": "object",
+"properties": { "name": { "bsonType": "string" }, "phone": { "bsonType": "string" }, "purpose": { "bsonType": "string" } }
+},
+"amount": { "bsonType": "decimal" },
+"payment": {
+"bsonType": "object",
+"properties": { "status": { "enum": ["pending", "paid", "failed", "refunded"] }, "reference": { "bsonType": "string" } }
+},
+"attendance": {
+"bsonType": "object",
+"properties": { "attended": { "bsonType": ["bool", "null"] }, "scanned_at": { "bsonType": "date" }, "scanner_id": { "bsonType": ["objectId", "null"] } }
+},
+"booking_notes": { "bsonType": "string" },
+"created_at": { "bsonType": "date" }
+}
+}
+}
+
+db.one_time_bookings.createIndex({ meal_date: 1 }, { name: "meal_date_idx" }); db.one_time_bookings.createIndex({ "payment.status": 1 }, { name: "payment_status_idx" }); db.one_time_bookings.createIndex({ booking_type: 1 }, { name: "booking_type_idx" }); db.one_time_bookings.createIndex({ user_id: 1, meal_date: 1 }, { name: "user_bookings_idx" });
+
+### 2.9.  `parent_bookings'  Collection
+
+
+{
+"$jsonSchema": {
+"bsonType": "object",
+"required": ["student_id", "meal_date", "meal_type", "parent_count", "parent_details", "amount"],
+"properties": {
+"student_id": { "bsonType": "objectId" },
+"meal_date": { "bsonType": "date" },
+"meal_type": { "enum": ["breakfast", "lunch", "snacks", "dinner"] },
+"parent_count": { "bsonType": "int", "minimum": 1, "maximum": 4 },
+"parent_details": {
+"bsonType": "object",
+"required": ["names"],
+"properties": { "names": { "bsonType": "array", "items": { "bsonType": "string" } }, "contact": { "bsonType": "string" } }
+},
+"amount": { "bsonType": "decimal" },
+"payment": {
+"bsonType": "object",
+"properties": { "status": { "enum": ["pending", "paid", "failed", "refunded"] }, "reference": { "bsonType": "string" } }
+},
+"attendance": {
+"bsonType": "object",
+"properties": { "attended": { "bsonType": ["bool", "null"] }, "scanned_at": { "bsonType": "date" }, "scanner_id": { "bsonType": ["objectId", "null"] } }
+},
+"special_requests": { "bsonType": "string" },
+"created_at": { "bsonType": "date" }
+}
+}
+}
+
+
+db.parent_bookings.createIndex({ student_id: 1, meal_date: 1 }, { name: "student_date_idx" }); db.parent_bookings.createIndex({ "payment.status": 1 }, { name: "payment_status_idx" }); db.parent_bookings.createIndex({ meal_date: 1 }, { name: "meal_date_idx" });
+
+### 2.10. `coupons'  Collection
+{
+"$jsonSchema": {
+"bsonType": "object",
+"required": ["code", "issued_by", "reason", "valid_for_meals", "validity", "recipient"],
+"properties": {
+"code": { "bsonType": "string" },
+"issued_by": { "bsonType": "objectId" },
+"reason": { "bsonType": "string" },
+"valid_for_meals": {
+"bsonType": "array",
+"items": { "bsonType": "string", "enum": ["breakfast", "lunch", "snacks", "dinner"] }
+},
+"validity": {
+"bsonType": "object",
+"required": ["from", "expires"],
+"properties": { "from": { "bsonType": "date" }, "expires": { "bsonType": "date" } }
+},
+"recipient": {
+"bsonType": "object",
+"required": ["type"],
+"properties": { "type": { "enum": ["employee", "guest"] }, "id": { "bsonType": ["objectId", "null"] }, "guest_name": { "bsonType": "string" }, "guest_phone": { "bsonType": "string" } }
+},
+"usage": {
+"bsonType": "object",
+"properties": { "is_used": { "bsonType": "bool" }, "at": { "bsonType": "date" }, "for_meal": { "enum": ["breakfast", "lunch", "snacks", "dinner", null] } }
+},
+"created_at": { "bsonType": "date" }
+}
+}
+}
+
+db.coupons.createIndex({ code: 1 }, { name: "code_unique", unique: true }); db.coupons.createIndex({ issued_by: 1 }, { name: "issuer_idx" }); db.coupons.createIndex({ "recipient.id": 1 }, { name: "recipient_idx" }); db.coupons.createIndex({ "validity.expires": 1, "usage.is_used": 1 }, { name: "validity_idx" }); db.coupons.createIndex({ created_at: 1 }, { name: "issued_date_idx" });
+
+### 2.11. `payment_transactions' Collection
+
+{
+"$jsonSchema": {
+"bsonType": "object",
+"required": ["user_id", "transaction_type", "amount", "status", "gateway_details"],
+"properties": {
+"user_id": { "bsonType": "objectId" },
+"transaction_type": { "enum": ["subscription", "one_time_booking", "parent_booking", "fine_payment"] },
+"reference_id": { "bsonType": "objectId" },
+"amount": { "bsonType": "decimal" },
+"status": { "enum": ["pending", "success", "failed", "refunded"] },
+"gateway_details": {
+"bsonType": "object",
+"required": ["method", "gateway", "transaction_id"],
+"properties": { "method": { "enum": ["card", "upi", "netbanking", "wallet"] }, "gateway": { "bsonType": "string" }, "transaction_id": { "bsonType": "string" }, "response": { "bsonType": "object" } }
+},
+"processed_at": { "bsonType": "date" },
+"created_at": { "bsonType": "date" }
+}
+}
+}
+
+
+db.payment_transactions.createIndex({ user_id: 1, created_at: -1 }, { name: "user_transactions_idx" }); db.payment_transactions.createIndex({ transaction_type: 1 }, { name: "transaction_type_idx" }); db.payment_transactions.createIndex({ status: 1 }, { name: "payment_status_idx" }); db.payment_transactions.createIndex({ "gateway_details.transaction_id": 1 }, { name: "gateway_transaction_idx" });
+
+### 2.12. 'system_settings'  Collection
+{
+"$jsonSchema": {
+"bsonType": "object",
+"required": ["_id", "setting_value", "setting_type"],
+"properties": {
+"_id": { "bsonType": "string" },
+"setting_value": { "bsonType": "string" },
+"setting_type": { "enum": ["string", "number", "boolean", "json"] },
+"description": { "bsonType": "string" },
+"is_editable": { "bsonType": "bool" },
+"updated_at": { "bsonType": "date" },
+"updated_by": { "bsonType": "objectId" }
+}
+}
+}
+
+
+
+
+### 2.5. Other Collections
+This documentation omits the full schemas for brevity, but the system also includes:
+* **`student_details`**: Detailed information for student users.
+* **`employee_details`**: Detailed information for employee users.
+* **`mess_subscriptions`**: For monthly meal plans.
+* **`one_time_bookings`**: For single meal purchases by guests or employees.
+* **`parent_bookings`**: For meals booked by students for their parents.
+* **`coupons`**: For free meal coupons issued by HODs.
+* **`payment_transactions`**: Logs every interaction with the payment gateway.
+* **`system_settings`**: A key-value store for dynamic configuration.
+
+---
+
+## 3. Core Business Logic
+
+### Monthly Offense & Fine System
+
+This is the most complex piece of logic. A fine is applied only if a student misses a confirmed meal **more than N times** in a calendar month, where N is a configurable setting.
+
+**Required Fields:**
+* A `mess_offense` object on the `users` document: `{ count: <Number>, month_key: <String "YYYY-MM"> }`
+* A `mess_offense_limit` setting in the `system_settings` collection.
+
+**Application Workflow on "No-Show":**
+
+1. **Log the Event:** When a student is a "no-show", their `meal_confirmations` document for that meal must be updated to `attended: false`. This creates the permanent audit log.
+2. **Get Month Key:** The application generates the current month's key (e.g., `"2025-06"`).
+3. **Atomic Increment:** The application attempts to increment the offense count **only if** the user's stored `month_key` matches the current month's key.
+```javascript
+// Pseudo-code
+const result = db.users.updateOne(
+{ _id: userId, "mess_offense.month_key": currentMonthKey },
+{ $inc: { "mess_offense.count": 1 } }
+);
+```
+4. **Handle Reset:** If the above update fails (`modifiedCount === 0`), it means this is the first offense of a new month. The application must then **reset** the counter.
+```javascript
+// Pseudo-code
+if (result.modifiedCount === 0) {
+db.users.updateOne(
+{ _id: userId },
+{ $set: { mess_offense: { count: 1, month_key: currentMonthKey } } }
+);
+}
+```
+5. **Apply Fine:** After the counter is updated, the application fetches the user's new offense count and compares it against the `mess_offense_limit` loaded from `system_settings`.
+```javascript
+// Pseudo-code
+const user = db.users.findOne({ _id: userId });
+const limit = config.mess_offense_limit; // Loaded from system_settings
+
+if (user.mess_offense.count > limit) {
+// Create a new document in the 'fines' collection.
+db.fines.insertOne({ ...fine_details... });
+}
+```
+
+---
+
+## 4. API Endpoint Definitions
+
+The following are foundational API endpoints. All routes should be prefixed with `/api`. All protected routes require a valid JWT in the `Authorization: Bearer <token>` header.
+
+### Authentication (`/auth`)
+
+* **`POST /auth/login`**
+* **Description:** Authenticates a user and returns a JWT.
+* **Payload:** `{ "email": "user@example.com", "password": "user_password" }`
+* **Success Response (200):** `{ "token": "...", "user": { ... } }`
+
+* **`POST /auth/register`**
+* **Description:** Creates a new user account.
+* **Payload:** `{ "name": { "first": "...", "last": "..." }, "email": "...", ... }`
+* **Success Response (201):** `{ "message": "User created successfully." }`
+
+### Meal Management (`/meals`)
+
+* **`GET /meals/timings`**
+* **Description:** (Protected) Fetches the schedule for all meals from the `meal_timings` collection.
+* **Success Response (200):** `[ { "_id": "breakfast", "start_time": "08:00:00", ... }, ... ]`
+
+* **`POST /meals/confirm`**
+* **Description:** (Protected) Allows a user to confirm they will attend a specific meal.
+* **Payload:** `{ "meal_date": "2025-06-15", "meal_type": "lunch" }`
+* **Success Response (201):** `{ "message": "Meal confirmed successfully.", "confirmation": { ... } }`
+
+### Admin / Mess Staff (`/admin`)
+
+* **`POST /admin/scan`**
+* **Description:** (Protected, Staff-only) Marks a user's confirmed meal as "attended". This endpoint is called when mess staff scan a user's QR code.
+* **Payload:** `{ "userId": "...", "meal_type": "lunch" }` (or QR data to be decoded)
+* **Success Response (200):** `{ "message": "Attendance marked for user." }`
+
+* **`GET /admin/settings`**
+* **Description:** (Protected, Admin-only) Retrieves all system settings.
+* **Success Response (200):** `[ { "_id": "mess_offense_limit", "setting_value": "3", ... } ]`
+
+* **`PUT /admin/settings/:key`**
+* **Description:** (Protected, Admin-only) Updates a specific system setting.
+* **Payload:** `{ "setting_value": "4" }`
+* **Success Response (200):** `{ "message": "Setting updated." }`
+
+### Fines (`/fines`)
+
+* **`GET /fines/my-fines`**
+* **Description:** (Protected) Fetches a list of all fines (paid and unpaid) for the currently authenticated user.
+* **Success Response (200):** `[ { "fine_type": "multiple_offense", "amount": 50.00, ... } ]`
