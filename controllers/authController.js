@@ -112,7 +112,7 @@ const authController = {
             }
 
             // Validate password
-            const isPasswordValid = await User.validatePassword(password, user.password_hash);
+            const isPasswordValid = await User.validatePassword(password, user.password);
             if (!isPasswordValid) {
                 return res.status(401).json({
                     error: 'Invalid Credentials',
