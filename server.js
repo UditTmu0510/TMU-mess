@@ -46,9 +46,9 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/meals', mealRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/admin', adminRoutes);
+// app.use('/api/meals', mealRoutes);
+// app.use('/api/bookings', bookingRoutes);
+// app.use('/api/admin', adminRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -82,24 +82,32 @@ app.use((err, req, res, next) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use((req, res) => {
     res.status(404).json({
         error: 'Route Not Found',
         details: `Cannot ${req.method} ${req.originalUrl}`
     });
 });
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 5000;
 
 // Start server
 const startServer = async () => {
     try {
-        await connectDB();
+        // Start server first, then attempt DB connection
         app.listen(PORT, '0.0.0.0', () => {
             console.log(`🚀 TMU Mess Management API Server running on port ${PORT}`);
             console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
             console.log(`🌐 Server URL: http://0.0.0.0:${PORT}`);
         });
+        
+        // Attempt DB connection in background
+        try {
+            await connectDB();
+            console.log('✅ Database connected successfully');
+        } catch (dbError) {
+            console.warn('⚠️ Database connection failed, server running without DB:', dbError.message);
+        }
     } catch (error) {
         console.error('❌ Failed to start server:', error);
         process.exit(1);
