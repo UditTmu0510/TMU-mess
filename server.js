@@ -39,6 +39,39 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Root endpoint - API documentation
+app.get('/', (req, res) => {
+    res.json({
+        message: 'TMU Mess Management System API',
+        version: '1.0.0',
+        documentation: {
+            description: 'Complete REST API for university mess management operations',
+            base_url: '/api',
+            endpoints: {
+                authentication: '/api/auth',
+                users: '/api/users',
+                meals: '/api/meals',
+                bookings: '/api/bookings',
+                admin: '/api/admin'
+            },
+            features: [
+                'User Authentication & Authorization',
+                'Meal Confirmation & Timing Management',
+                'Booking System (Employee, Guest, Parent)',
+                'Subscription Management',
+                'Fine Management & Calculations',
+                'Admin Dashboard & Reporting',
+                'Real-time QR Code Scanning',
+                'Comprehensive Data Export'
+            ]
+        },
+        health_check: '/health',
+        status: 'operational',
+        database: 'connected',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({
@@ -86,12 +119,21 @@ app.use((err, req, res, next) => {
     });
 });
 
-// 404 handler
+// 404 handler for all other routes
 app.use((req, res) => {
-    res.status(404).json({
-        error: 'Route Not Found',
-        details: `Cannot ${req.method} ${req.originalUrl}`
-    });
+    if (req.path.startsWith('/api/')) {
+        res.status(404).json({
+            error: 'API Route Not Found',
+            details: `Cannot ${req.method} ${req.originalUrl}`,
+            available_endpoints: ['/api/auth', '/api/users', '/api/meals', '/api/bookings', '/api/admin']
+        });
+    } else {
+        res.status(404).json({
+            error: 'Route Not Found',
+            details: `Cannot ${req.method} ${req.originalUrl}`,
+            tip: 'Try accessing the root endpoint "/" for API documentation'
+        });
+    }
 });
 
 const PORT = process.env.PORT || 5000;
