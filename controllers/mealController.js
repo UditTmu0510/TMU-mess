@@ -121,222 +121,183 @@ const mealController = {
 
 confirmMeal: async (req, res) => {
     try {
-        const confirmations = req.body; // Expecting an array of objects
+        const { weeklyConfirmations } = req.body; // Expecting weekly confirmations data
         const userId = req.user.id;
-        const errors = []; // Collect errors, but for decision-making, not direct return
-
-        if (!Array.isArray(confirmations) || confirmations.length === 0) {
+        
+        if (!weeklyConfirmations || !Array.isArray(weeklyConfirmations)) {
             return res.status(400).json({
                 error: 'Invalid Request Body',
-                details: 'Expected an array of meal confirmations.'
+                details: 'Expected weeklyConfirmations array with meal confirmation data.'
             });
         }
 
-        const confirmationPromises = confirmations.flatMap(confirmation => {
-            const { meal_date, meal_types, notes } = confirmation;
+        const results = {
+            created: [],
+            updated: [],
+            deleted: [],
+            frozen: [],
+            errors: []
+        };
 
-            // --- Initial Input Validation for each confirmation object ---
-            if (!meal_date || typeof meal_date !== 'string' || !meal_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                errors.push({
-                    item: confirmation,
-                    error: 'Validation Failed',
-                    details: 'Valid meal date (YYYY-MM-DD) is required for this entry.'
+        const today = new Date();
+        today.setUTCHours(0, 0, 0, 0);
+
+        // Process each day's confirmations
+        for (const dayData of weeklyConfirmations) {
+            const { date, ...mealTypeSelections } = dayData;
+            
+            if (!date) {
+                results.errors.push({
+                    error: 'Missing date for confirmation data',
+                    data: dayData
                 });
-                return [];
+                continue;
             }
 
-            if (!Array.isArray(meal_types) || meal_types.length === 0) {
-                errors.push({
-                    item: confirmation,
-                    error: 'Validation Failed',
-                    details: 'At least one meal type is required for this entry.'
+            // Parse the date - assuming format like "December 19" from getWeeklyMealConfirmationStatus
+            const currentYear = today.getFullYear();
+            const parsedDate = new Date(`${date}, ${currentYear}`);
+            parsedDate.setUTCHours(0, 0, 0, 0);
+
+            // Skip if date is in the past
+            if (parsedDate < today) {
+                results.errors.push({
+                    error: 'Cannot modify confirmations for past dates',
+                    date: date
                 });
-                return [];
+                continue;
             }
 
-            const currentMealDate = new Date(meal_date);
-            currentMealDate.setUTCHours(0, 0, 0, 0);
-
-            if (isDateInPast(currentMealDate)) {
-                errors.push({
-                    item: confirmation,
-                    error: 'Invalid Date',
-                    details: `Cannot confirm meals for past date: ${meal_date}`
-                });
-                return [];
-            }
-            // --- End Initial Input Validation ---
-
-            return meal_types.map(async (mealType) => {
-                if (!MEAL_TYPES.includes(mealType)) {
-                    throw new Error(`Unrecognized meal type: ${mealType}. Expected one of: ${MEAL_TYPES.join(', ')}`);
+            // Process each meal type for this date
+            for (const mealType of MEAL_TYPES) {
+                const isSelected = mealTypeSelections[mealType];
+                const isFrozen = mealTypeSelections[`is_freeze_${mealType}`];
+                
+                // Skip frozen meals - they cannot be modified
+                if (isFrozen) {
+                    continue;
                 }
 
-                // Check confirmation deadline first, as it applies to both new confirmations and updates
-                const deadlineCheck = await MealTiming.checkConfirmationDeadline(mealType, currentMealDate);
-                if (!deadlineCheck.canConfirm) {
-                    throw new Error(`Confirmation deadline for ${mealType} on ${meal_date} was ${deadlineCheck.deadline.toLocaleString()}`);
-                }
-
-                // Check if confirmation already exists for this user, date, and meal type
-                const existingConfirmation = await MealConfirmation.findByUserAndDate(
-                    userId, currentMealDate, mealType
-                );
-
-                if (existingConfirmation) {
-                    // --- EXISTING CONFIRMATION LOGIC ---
-                    if (existingConfirmation.is_freeze) {
-                        // If is_freeze is true, do NOT update. Treat as a successful but non-actionable update.
-                        // You might want to return a specific status or message here if the frontend needs to know
-                        // that it was "frozen" rather than genuinely updated. For now, we'll treat it as successful
-                        // but not resulting in database modification.
-                        return {
-                            id: existingConfirmation._id,
-                            meal_date: existingConfirmation.meal_date,
-                            meal_type: existingConfirmation.meal_type,
-                            confirmed_at: existingConfirmation.confirmed_at, // Keep original
-                            meal_cost: existingConfirmation.meal_cost,
-                            subscription_covered: true, // Assuming frozen means covered
-                            status: 'frozen', // Custom status for the client
-                            message: `Meal ${mealType} for ${meal_date} is frozen and cannot be updated.`
-                        };
-                    } else {
-                        // If is_freeze is false, update the existing record.
-                        // You'll need an update method in your MealConfirmation model.
-                        // This update will implicitly update 'updatedAt' if you have timestamps enabled,
-                        // and we will explicitly update 'confirmed_at' as per requirement.
-
-                        const updateFields = {
-                            // Only update these fields, keep others like meal_cost as is if not changed
-                            confirmed_at: new Date(), // Update confirmed_at
-                            notes: notes || existingConfirmation.notes || '', // Update notes or keep existing
-                            // If you have an 'updated_at' field in your schema/model and it's managed manually:
-                            // updated_at: new Date(),
-                        };
-
-                        // Assuming you have a method like MealConfirmation.updateConfirmationById in your model
-                        const updateResult = await MealConfirmation.updateConfirmationById(
-                            existingConfirmation._id,
-                            updateFields
-                        );
-
-                        if (updateResult.modifiedCount === 0) {
-                             // This might happen if no fields actually changed, or if there's an issue.
-                             // For this logic, we'll still treat it as a success as it was found and not frozen.
-                             return {
-                                id: existingConfirmation._id,
-                                meal_date: existingConfirmation.meal_date,
-                                meal_type: existingConfirmation.meal_type,
-                                confirmed_at: existingConfirmation.confirmed_at, // Use original if no change, or updated if you query it back
-                                meal_cost: existingConfirmation.meal_cost,
-                                subscription_covered: true, // Assuming subscription covered for existing
-                                status: 'unchanged', // Custom status for the client
-                                message: `Meal ${mealType} for ${meal_date} was already confirmed and no changes were required.`
-                            };
-                        }
-
-                        // Re-fetch the updated confirmation to return the latest state
-                        const updatedConfirmation = await MealConfirmation.findById(existingConfirmation._id);
-
-                        return {
-                            id: updatedConfirmation._id,
-                            meal_date: updatedConfirmation.meal_date,
-                            meal_type: updatedConfirmation.meal_type,
-                            confirmed_at: updatedConfirmation.confirmed_at, // This should be the new date
-                            meal_cost: updatedConfirmation.meal_cost,
-                            subscription_covered: true, // Assuming subscription covered for existing
-                            status: 'updated', // Custom status for the client
-                            message: `Meal ${mealType} for ${meal_date} updated successfully.`
-                        };
-                    }
-                } else {
-                    // --- NEW CONFIRMATION LOGIC ---
-                    // Check if user has subscription or needs to pay per meal
-                    const subscriptionStatus = await MessSubscription.checkUserSubscriptionStatus(
-                        userId, mealType, currentMealDate
+                try {
+                    // Check if confirmation already exists
+                    const existingConfirmation = await MealConfirmation.findByUserAndDate(
+                        userId, parsedDate, mealType
                     );
 
-                    let mealCost = 0;
-                    if (!subscriptionStatus.hasSubscription) {
-                        const mealTiming = await MealTiming.getByMealType(mealType);
-                        mealCost = mealTiming ? mealTiming.per_meal_cost : 0;
+                    if (isSelected) {
+                        // User wants to confirm this meal
+                        if (existingConfirmation) {
+                            // Update existing confirmation (re-confirm)
+                            const updateFields = {
+                                confirmed_at: new Date(),
+                                notes: '' // Reset notes on re-confirmation
+                            };
+
+                            await MealConfirmation.updateConfirmationById(
+                                existingConfirmation._id,
+                                updateFields
+                            );
+
+                            results.updated.push({
+                                date: date,
+                                meal_type: mealType,
+                                id: existingConfirmation._id
+                            });
+                        } else {
+                            // Create new confirmation
+                            // Check confirmation deadline
+                            const deadlineCheck = await MealTiming.checkConfirmationDeadline(mealType, parsedDate);
+                            if (!deadlineCheck.canConfirm) {
+                                results.errors.push({
+                                    error: `Confirmation deadline passed for ${mealType} on ${date}`,
+                                    date: date,
+                                    meal_type: mealType,
+                                    deadline: deadlineCheck.deadline
+                                });
+                                continue;
+                            }
+
+                            // Check subscription status for cost calculation
+                            const subscriptionStatus = await MessSubscription.checkUserSubscriptionStatus(
+                                userId, mealType, parsedDate
+                            );
+
+                            let mealCost = 0;
+                            if (!subscriptionStatus.hasSubscription) {
+                                const mealTiming = await MealTiming.getByMealType(mealType);
+                                mealCost = mealTiming ? mealTiming.per_meal_cost : 0;
+                            }
+
+                            // Create new confirmation
+                            const confirmationData = {
+                                user_id: userId,
+                                meal_date: parsedDate,
+                                meal_type: mealType,
+                                notes: '',
+                                meal_cost: mealCost,
+                                is_freeze: false
+                            };
+
+                            const newConfirmation = await MealConfirmation.create(confirmationData);
+                            
+                            results.created.push({
+                                date: date,
+                                meal_type: mealType,
+                                id: newConfirmation._id,
+                                meal_cost: mealCost,
+                                subscription_covered: subscriptionStatus.hasSubscription
+                            });
+                        }
+                    } else {
+                        // User wants to unconfirm this meal
+                        if (existingConfirmation && !existingConfirmation.is_freeze) {
+                            // Delete the confirmation only if not frozen
+                            await MealConfirmation.deleteConfirmation(existingConfirmation._id);
+                            
+                            results.deleted.push({
+                                date: date,
+                                meal_type: mealType,
+                                id: existingConfirmation._id
+                            });
+                        }
                     }
-
-                    // Create meal confirmation
-                    const confirmationData = {
-                        user_id: userId,
-                        meal_date: currentMealDate,
-                        meal_type: mealType,
-                        notes: notes || '',
-                        meal_cost: mealCost,
-                        is_freeze: false, // New confirmations are not frozen by default
-                    };
-
-                    const newConfirmation = await MealConfirmation.create(confirmationData);
-                    
-                    return {
-                        id: newConfirmation._id,
-                        meal_date: newConfirmation.meal_date,
-                        meal_type: newConfirmation.meal_type,
-                        confirmed_at: newConfirmation.confirmed_at,
-                        meal_cost: mealCost,
-                        subscription_covered: subscriptionStatus.hasSubscription,
-                        status: 'created', // Custom status for the client
-                        message: `Meal ${mealType} for ${meal_date} confirmed successfully.`
-                    };
+                } catch (error) {
+                    results.errors.push({
+                        error: `Failed to process ${mealType} for ${date}: ${error.message}`,
+                        date: date,
+                        meal_type: mealType
+                    });
                 }
-            });
-        });
-
-        // If there were initial validation errors, return them immediately
-        if (errors.length > 0) {
-            return res.status(400).json({
-                error: 'Meal Confirmation Failed',
-                details: 'Some initial validation errors occurred.',
-                validationErrors: errors
-            });
-        }
-        
-        const results = await Promise.allSettled(confirmationPromises);
-
-        const failedOperations = [];
-        const successfulOperations = []; // To collect results from successful/updated/frozen operations
-
-        results.forEach((result) => {
-            if (result.status === 'rejected') {
-                failedOperations.push(result.reason.message);
-            } else {
-                successfulOperations.push(result.value); // Collect all successful, updated, or frozen responses
             }
-        });
+        }
 
-        if (failedOperations.length > 0) {
+        // Return comprehensive results
+        const totalProcessed = results.created.length + results.updated.length + results.deleted.length;
+        
+        if (results.errors.length > 0 && totalProcessed === 0) {
             return res.status(400).json({
                 error: 'Meal Confirmation Failed',
-                details: 'One or more meal confirmations could not be processed successfully.',
-                failed_reasons: failedOperations,
-                // Optionally, you can still return successfully processed items if client needs them
-                // processed_meals: successfulOperations
-            });
-        } else {
-            return res.status(200).json({
-                message: 'All specified meal operations completed successfully.',
-                processed_meals_count: successfulOperations.length
-                // Optionally, return a summary of all processed meals:
-                // processed_meals_summary: successfulOperations.map(op => ({
-                //     date: op.meal_date.toISOString().split('T')[0],
-                //     mealType: op.meal_type,
-                //     status: op.status,
-                //     message: op.message
-                // }))
+                details: 'No confirmations could be processed successfully.',
+                errors: results.errors
             });
         }
+
+        res.status(200).json({
+            message: `Meal confirmations processed successfully. ${totalProcessed} operations completed.`,
+            summary: {
+                created: results.created.length,
+                updated: results.updated.length,
+                deleted: results.deleted.length,
+                errors: results.errors.length
+            },
+            details: results
+        });
 
     } catch (error) {
-        console.error('Bulk confirm meal error:', error);
+        console.error('Weekly meal confirmation error:', error);
         res.status(500).json({
             error: 'Meal Confirmation Failed',
-            details: error.message || 'An unexpected error occurred during bulk meal confirmation.'
+            details: error.message
         });
     }
 },
