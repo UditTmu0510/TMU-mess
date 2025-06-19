@@ -253,16 +253,16 @@ confirmMeal: async (req, res) => {
                     } else {
                         // User wants to unconfirm this meal
                         // console.log(existingConfirmation);
-                        // if (existingConfirmation && !existingConfirmation.is_freeze) {
-                        //     // Delete the confirmation only if not frozen
-                        //     await MealConfirmation.deleteConfirmation(existingConfirmation._id);
+                        if (existingConfirmation && !existingConfirmation.is_freeze) {
+                            // Delete the confirmation only if not frozen
+                            await MealConfirmation.deleteConfirmation(existingConfirmation._id);
                             
-                        //     results.deleted.push({
-                        //         date: date,
-                        //         meal_type: mealType,
-                        //         id: existingConfirmation._id
-                        //     });
-                        // }
+                            results.deleted.push({
+                                date: date,
+                                meal_type: mealType,
+                                id: existingConfirmation._id
+                            });
+                        }
                     }
                 } catch (error) {
                     results.errors.push({
