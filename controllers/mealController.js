@@ -156,8 +156,10 @@ confirmMeal: async (req, res) => {
 
             // Parse the date - assuming format like "December 19" from getWeeklyMealConfirmationStatus
             const currentYear = today.getFullYear();
-            const parsedDate = new Date(`${date}, ${currentYear}`);
-            parsedDate.setUTCHours(0, 0, 0, 0);
+            // Correctly parse the date as UTC to avoid timezone shifts.
+            // new Date('December 21, 2024') creates a local time date.
+            // Appending ' UTC' treats the date as UTC from the start.
+            const parsedDate = new Date(`${date}, ${currentYear} UTC`);
 
             // Skip if date is in the past
             if (parsedDate < today) {
@@ -250,16 +252,17 @@ confirmMeal: async (req, res) => {
                         }
                     } else {
                         // User wants to unconfirm this meal
-                        if (existingConfirmation && !existingConfirmation.is_freeze) {
-                            // Delete the confirmation only if not frozen
-                            await MealConfirmation.deleteConfirmation(existingConfirmation._id);
+                        // console.log(existingConfirmation);
+                        // if (existingConfirmation && !existingConfirmation.is_freeze) {
+                        //     // Delete the confirmation only if not frozen
+                        //     await MealConfirmation.deleteConfirmation(existingConfirmation._id);
                             
-                            results.deleted.push({
-                                date: date,
-                                meal_type: mealType,
-                                id: existingConfirmation._id
-                            });
-                        }
+                        //     results.deleted.push({
+                        //         date: date,
+                        //         meal_type: mealType,
+                        //         id: existingConfirmation._id
+                        //     });
+                        // }
                     }
                 } catch (error) {
                     results.errors.push({
