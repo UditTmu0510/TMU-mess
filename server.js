@@ -10,6 +10,7 @@ const userRoutes = require('./routes/users');
 const mealRoutes = require('./routes/meals');
 const bookingRoutes = require('./routes/bookings');
 const adminRoutes = require('./routes/admin');
+const qrRoutes = require('./routes/qr');
 
 const app = express();
 
@@ -52,7 +53,8 @@ app.get('/', (req, res) => {
                 users: '/api/users',
                 meals: '/api/meals',
                 bookings: '/api/bookings',
-                admin: '/api/admin'
+                admin: '/api/admin',
+                qr_codes: '/api/qr'
             },
             features: [
                 'User Authentication & Authorization',
@@ -87,6 +89,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/meals', mealRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/qr', qrRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {
