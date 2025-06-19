@@ -1,0 +1,1021 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6",
+    "name": "TMU Mess Management API",
+    "description": "Postman collection for TMU Mess Management API testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "description": "Authentication endpoints",
+      "item": [
+        {
+          "name": "Root Endpoint",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://0.0.0.0:5000/",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": [""]
+            }
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://0.0.0.0:5000/health",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "User Registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"tmu_code\": \"TEST999\",\n    \"user_type\": \"student\",\n    \"name\": { \"first\": \"Test\", \"last\": \"User\" },\n    \"email\": \"test.user@tmu.ac.in\",\n    \"phone\": \"9999999999\",\n    \"password\": \"testpass123\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/auth/register",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login - Student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"tmu_code\": \"STU001\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/auth/login",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"tmu_code\": \"EMP001\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/auth/login",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - Staff",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"tmu_code\": \"STAFF001\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/auth/login",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - HOD",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"tmu_code\": \"HOD001\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/auth/login",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Token Verification",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/auth/verify-token",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "auth", "verify-token"]
+            }
+          }
+        },
+        {
+          "name": "Invalid Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"tmu_code\": \"INVALID\",\n    \"password\": \"wrongpass\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/auth/login",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Meal Management",
+      "description": "Meal management endpoints",
+      "item": [
+        {
+          "name": "Get Meal Timings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/meals/timings",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "meals", "timings"]
+            }
+          }
+        },
+        {
+          "name": "Meal Confirmation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"meal_date\": \"2025-06-15\",\n    \"meal_type\": \"breakfast\",\n    \"notes\": \"Test confirmation\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/meals/confirm",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "meals", "confirm"]
+            }
+          }
+        },
+        {
+          "name": "Get User Confirmations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/meals/confirmations?start_date=2025-06-01&end_date=2025-06-30",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "meals", "confirmations"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2025-06-01"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2025-06-30"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Today's Meals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/meals/today",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "meals", "today"]
+            }
+          }
+        },
+        {
+          "name": "Get Weekly Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/meals/weekly-stats",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "meals", "weekly-stats"]
+            }
+          }
+        },
+        {
+          "name": "Daily Meal Report (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mess_staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/meals/reports/daily/2025-06-12",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "meals", "reports", "daily", "2025-06-12"]
+            }
+          }
+        },
+        {
+          "name": "QR Code Scan (Staff)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mess_staff_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"qr_data\": \"invalid_qr_data\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/meals/scan-qr",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "meals", "scan-qr"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Booking System",
+      "description": "Booking system endpoints",
+      "item": [
+        {
+          "name": "Employee Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{employee_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"meal_date\": \"2025-06-20\",\n    \"meal_type\": \"lunch\",\n    \"notes\": \"Test employee booking\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/bookings/employee",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "bookings", "employee"]
+            }
+          }
+        },
+        {
+          "name": "Guest Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{employee_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"meal_date\": \"2025-06-21\",\n    \"meal_type\": \"dinner\",\n    \"guest_details\": {\n        \"name\": \"Test Guest\",\n        \"phone\": \"9999888877\",\n        \"relationship\": \"Friend\"\n    },\n    \"notes\": \"Test guest booking\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/bookings/guest",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "bookings", "guest"]
+            }
+          }
+        },
+        {
+          "name": "Parent Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"meal_date\": \"2025-06-22\",\n    \"meal_type\": \"lunch\",\n    \"parent_details\": [\n        {\n            \"name\": \"Test Father\",\n            \"phone\": \"9999777766\",\n            \"relationship\": \"Father\"\n        }\n    ],\n    \"notes\": \"Test parent booking\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/bookings/parent",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "bookings", "parent"]
+            }
+          }
+        },
+        {
+          "name": "Get User Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/bookings/my-bookings",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "bookings", "my-bookings"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscription Management",
+      "description": "Subscription management endpoints",
+      "item": [
+        {
+          "name": "Create Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"subscription_type\": \"hostel_student\",\n    \"meal_types\": [\"breakfast\", \"lunch\"],\n    \"start_date\": \"2025-07-01\",\n    \"end_date\": \"2025-07-31\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/bookings/subscriptions",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "bookings", "subscriptions"]
+            }
+          }
+        },
+        {
+          "name": "Get User Subscriptions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/bookings/subscriptions/my",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "bookings", "subscriptions", "my"]
+            }
+          }
+        },
+        {
+          "name": "Employee Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{employee_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"subscription_type\": \"employee_monthly\",\n    \"meal_types\": [\"lunch\"],\n    \"start_date\": \"2025-07-01\",\n    \"end_date\": \"2025-07-31\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/bookings/subscriptions",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "bookings", "subscriptions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "description": "User management endpoints",
+      "item": [
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/users/profile",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update User Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": { \"first\": \"Updated\", \"last\": \"Name\" },\n    \"phone\": \"9999666655\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/users/profile",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Get User Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/users/dashboard",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "users", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Get User Fines",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/users/fines",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "users", "fines"]
+            }
+          }
+        },
+        {
+          "name": "Get Meal History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/users/meal-history",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "users", "meal-history"]
+            }
+          }
+        },
+        {
+          "name": "Get Student Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/users/students/details",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "users", "students", "details"]
+            }
+          }
+        },
+        {
+          "name": "Get Employee Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{employee_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/users/employees/details",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "users", "employees", "details"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Operations",
+      "description": "Admin operations endpoints",
+      "item": [
+        {
+          "name": "Admin Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hod_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/admin/dashboard",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "admin", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "User Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hod_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/admin/users/statistics",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "admin", "users", "statistics"]
+            }
+          }
+        },
+        {
+          "name": "Monthly Revenue Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hod_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/admin/reports/revenue/monthly/2025/6",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": [
+                "api",
+                "admin",
+                "reports",
+                "revenue",
+                "monthly",
+                "2025",
+                "6"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Outstanding Fines",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hod_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/admin/fines/outstanding",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "admin", "fines", "outstanding"]
+            }
+          }
+        },
+        {
+          "name": "Daily Fine Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hod_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/admin/fines/reports/daily/2025-06-12",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": [
+                "api",
+                "admin",
+                "fines",
+                "reports",
+                "daily",
+                "2025-06-12"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Handling",
+      "description": "Error handling tests",
+      "item": [
+        {
+          "name": "Unauthorized Access",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/users/profile",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Invalid Endpoint",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/invalid/endpoint",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "invalid", "endpoint"]
+            }
+          }
+        },
+        {
+          "name": "Invalid Registration Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"tmu_code\": \"INVALID\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/auth/register",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Forbidden Access",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/admin/dashboard",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "admin", "dashboard"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Data Integrity",
+      "description": "Data integrity tests",
+      "item": [
+        {
+          "name": "Duplicate Confirmation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"meal_date\": \"2025-06-15\",\n    \"meal_type\": \"breakfast\",\n    \"notes\": \"Duplicate confirmation test\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/meals/confirm",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "meals", "confirm"]
+            }
+          }
+        },
+        {
+          "name": "Past Date Confirmation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"meal_date\": \"2025-01-01\",\n    \"meal_type\": \"breakfast\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/meals/confirm",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "meals", "confirm"]
+            }
+          }
+        },
+        {
+          "name": "Invalid Meal Type",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"meal_date\": \"2025-06-25\",\n    \"meal_type\": \"invalid_meal\"\n}"
+            },
+            "url": {
+              "raw": "http://0.0.0.0:5000/api/meals/confirm",
+              "protocol": "http",
+              "host": ["0.0.0.0"],
+              "port": "5000",
+              "path": ["api", "meals", "confirm"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "student_token",
+      "value": "",
+      "description": "Will be set after successful student login"
+    },
+    {
+      "key": "employee_token",
+      "value": "",
+      "description": "Will be set after successful employee login"
+    },
+    {
+      "key": "mess_staff_token",
+      "value": "",
+      "description": "Will be set after successful staff login"
+    },
+    {
+      "key": "hod_token",
+      "value": "",
+      "description": "Will be set after successful HOD login"
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set environment variables for tokens after successful login",
+          "if (pm.response.code === 200 && pm.request.url.path.includes('login')) {",
+          "    try {",
+          "        const jsonData = pm.response.json();",
+          "        const userType = jsonData.user?.user_type || 'unknown';",
+          "        const accessToken = jsonData.tokens?.access_token;",
+          "",
+          "        if (userType && accessToken) {",
+          "            pm.collectionVariables.set(`${userType}_token`, accessToken);",
+          "            console.log(`Token saved for userType: ${userType}`);",
+          "        } else {",
+          "            console.warn('Missing userType or accessToken in response');",
+          "        }",
+          "    } catch (e) {",
+          "        console.error('Error parsing login response:', e);",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ]
+}

@@ -2,6 +2,8 @@ const { getDB } = require('../config/database');
 const { ObjectId } = require('mongodb');
 
 class MealConfirmation {
+
+    
     constructor(data) {
         this.user_id = new ObjectId(data.user_id);
         this.meal_date = new Date(data.meal_date);
@@ -23,23 +25,56 @@ class MealConfirmation {
         return { ...confirmation, _id: result.insertedId };
     }
 
-    static async findByUserAndDate(userId, mealDate, mealType = null) {
-        const db = getDB();
-        const query = {
-            user_id: new ObjectId(userId),
-            meal_date: new Date(mealDate)
-        };
+    // static async findByUserAndDate(userId, mealDate, mealType = null) {
+    //     const db = getDB();
+    //     const query = {
+    //         user_id: new ObjectId(userId),
+    //         meal_date: new Date(mealDate)
+    //     };
 
-        if (mealType) {
-            query.meal_type = mealType;
-        }
+    //     if (mealType) {
+    //         query.meal_type = mealType;
+    //     }
 
-        if (mealType) {
-            return await db.collection('meal_confirmations').findOne(query);
-        } else {
-            return await db.collection('meal_confirmations').find(query).toArray();
+    //     if (mealType) {
+    //         return await db.collection('meal_confirmations').findOne(query);
+    //     } else {
+    //         return await db.collection('meal_confirmations').find(query).toArray();
+    //     }
+    // }
+
+
+    // Inside your MealConfirmation Model (e.g., mealConfirmation.model.js)
+
+static async findByUserAndDate(userId, mealDate, mealType = null) {
+    const db = getDB();
+
+    // Ensure mealDate is treated as a date without time for querying
+    const inputDate = new Date(mealDate);
+    const startOfDay = new Date(inputDate);
+    startOfDay.setUTCHours(0, 0, 0, 0); // Set to start of the day in UTC
+    const endOfDay = new Date(inputDate);
+    endOfDay.setUTCHours(23, 59, 59, 999); // Set to end of the day in UTC
+
+    const query = {
+        user_id: new ObjectId(userId),
+        meal_date: {
+            $gte: startOfDay,
+            $lte: endOfDay
         }
+    };
+
+    if (mealType) {
+        query.meal_type = mealType;
+        // When mealType is provided, we expect a single confirmation, so findOne is appropriate
+        return await db.collection('meal_confirmations').findOne(query);
+    } else {
+        // When mealType is not provided, we want all confirmations for the user on that date
+        return await db.collection('meal_confirmations').find(query).toArray();
     }
+}
+
+
 
     static async findById(confirmationId) {
         const db = getDB();
@@ -81,6 +116,55 @@ class MealConfirmation {
                 $lte: new Date(endDate)
             }
         }).sort({ meal_date: 1, meal_type: 1 }).toArray();
+    }
+
+     static async updateConfirmationById(confirmationId, updateFields) {
+        const db = getDB();
+        
+        // Convert confirmationId to ObjectId if it's a string
+        const objConfirmationId = typeof confirmationId === 'string' ? new ObjectId(confirmationId) : confirmationId;
+
+        // Prepare the fields to set in the document
+        const $set = {};
+
+        // Explicitly map allowed update fields based on your schema
+        // and ensure correct data types where necessary
+        if (updateFields.confirmed_at !== undefined) {
+            $set.confirmed_at = new Date(updateFields.confirmed_at);
+        }
+        if (updateFields.notes !== undefined) {
+            $set.notes = updateFields.notes;
+        }
+        if (updateFields.is_freeze !== undefined) {
+            $set.is_freeze = Boolean(updateFields.is_freeze);
+        }
+        // Fields related to attendance (if updated separately from initial confirmation)
+        if (updateFields.attended !== undefined) {
+            $set.attended = Boolean(updateFields.attended);
+        }
+        if (updateFields.qr_scanned_at !== undefined) {
+            $set.qr_scanned_at = updateFields.qr_scanned_at ? new Date(updateFields.qr_scanned_at) : null;
+        }
+        if (updateFields.qr_scanner_id !== undefined) {
+            $set.qr_scanner_id = updateFields.qr_scanner_id ? new ObjectId(updateFields.qr_scanner_id) : null;
+        }
+        if (updateFields.fine_applied !== undefined) {
+            $set.fine_applied = Number(updateFields.fine_applied);
+        }
+
+        // Add or update 'updated_at' if it's a field you manage manually and want it updated on any change
+        // If your schema uses Mongoose `timestamps: true`, it handles `updatedAt` automatically and you can omit this.
+        // Based on your schema, it doesn't explicitly show a separate 'updated_at' field besides 'created_at' and 'confirmed_at'.
+        // If 'confirmed_at' serves as your last update timestamp for confirmation, then the controller's logic updating `confirmed_at` is sufficient.
+        // If you truly have a separate 'updated_at', you would add:
+        // $set.updated_at = new Date(); // Or if updateFields.updated_at is provided
+
+        const result = await db.collection('meal_confirmations').updateOne(
+            { _id: objConfirmationId },
+            { $set: $set }
+        );
+
+        return result; // Returns { acknowledged: true, matchedCount: 1, modifiedCount: 1, ... }
     }
 
     static async getDailyConfirmationReport(date) {

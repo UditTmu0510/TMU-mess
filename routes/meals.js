@@ -7,18 +7,19 @@ const { validateMealConfirmation } = require('../middleware/validation');
 // Get meal timings
 router.get('/timings', mealController.getMealTimings);
 
+
 // Confirm meal
 router.post('/confirm', 
     authenticateToken, 
-    validateMealConfirmation, 
     mealController.confirmMeal
 );
 
-// Cancel meal confirmation
-router.delete('/confirm/:confirmationId', 
-    authenticateToken, 
-    mealController.cancelMealConfirmation
+router.get('/meal-status/weekly', 
+    authenticateToken,
+    mealController.getWeeklyMealConfirmationStatus
 );
+
+// Cancel meal confirmation
 
 // Get user's meal confirmations for a date range
 router.get('/confirmations', 
