@@ -174,34 +174,7 @@ const qrController = {
             let attendanceResult;
 
          // Declare variables outside the if blocks to make them accessible later
-let college_name = null;
-let course_name = null;
-let hostel_name = null;
-let semester_year = null;
-let designation = null;
-let employee_type = null;
 
-let user_type = user.user_type;
-
-if (user_type === 'student') {
-    const studentDetails = await student_details.findOne({ user_id: user._id });
-
-    if (studentDetails) {
-        college_name = studentDetails.college_name;
-        course_name = studentDetails.course_name;
-        hostel_name = studentDetails.hostel_details?.hostel_name;
-        semester_year = studentDetails.academic_details?.semester;
-    }
-}
-
-if (user_type === 'employee') {
-    const employeeDetails = await employee_details.findOne({ user_id: user._id });
-
-    if (employeeDetails) {
-        designation = employeeDetails.designation;
-        employee_type = employeeDetails.employee_type;
-    }
-}
 
 
             
@@ -256,7 +229,44 @@ if (user_type === 'employee') {
                 };
             }
 
-            const userResponse = {
+           let college_name = null;
+let course_name = null;
+let hostel_name = null;
+let semester_year = null;
+let designation = null;
+let employee_type = null;
+
+const user_type = user.user_type;
+const tmu_code = user.tmu_code;
+
+// Conditionally fetch details based on user_type by calling the static model methods
+if (user_type === 'student') {
+    // UPDATED: Using the static findByUserId method from the student_details model
+    const studentDetails = await student_details.findByUserId(user._id);
+
+    if (studentDetails) {
+        college_name = studentDetails.college_name;
+        course_name = studentDetails.course_name;
+        // Safely access nested properties using optional chaining (?.)
+        hostel_name = studentDetails.hostel_details?.hostel_name || null;
+        semester_year = studentDetails.academic_details?.semester || null;
+    }
+}
+
+if (user_type === 'employee') {
+    // UPDATED: Using the static findByUserId method from the employee_details model
+    const employeeDetails = await employee_details.findByUserId(user._id);
+    
+    if (employeeDetails) {
+        designation = employeeDetails.designation;
+        employee_type = employeeDetails.employee_type;
+    }
+}
+
+// --- 2. Build the Dynamic User Object for the Response (No changes here) ---
+
+// Start with a base user object containing common fields
+const userResponse = {
     id: user._id,
     name: user.name,
     tmu_code: tmu_code,
@@ -264,8 +274,8 @@ if (user_type === 'employee') {
     user_department: user.department || null
 };
 
-
-         if (user_type === 'student') {
+// Add fields conditionally based on the user_type
+if (user_type === 'student') {
     userResponse.college_name = college_name;
     userResponse.course_name = course_name;
     userResponse.hostel_name = hostel_name;
@@ -277,6 +287,9 @@ if (user_type === 'employee') {
     userResponse.employee_type = employee_type;
 }
 
+// --- 3. Send the Final JSON Response (No changes here) ---
+
+
 // --- 3. Send the Final JSON Response ---
 
 res.status(200).json({
@@ -286,6 +299,7 @@ res.status(200).json({
     scanned_by: scannerId,
     scanned_at: new Date()
 });
+
 
         } catch (error) {
             console.error('QR scan error:', error);
