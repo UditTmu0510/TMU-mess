@@ -1,6 +1,8 @@
 const crypto = require('crypto');
 const { ObjectId } = require('mongodb');
 const User = require('../models/User');
+const student_details = require('../models/StudentDetail');
+const employee_details = require('../models/EmployeeDetail');
 const MealConfirmation = require('../models/MealConfirmation');
 const MessSubscription = require('../models/MessSubscription');
 const MealTiming = require('../models/MealTiming');
@@ -118,6 +120,9 @@ const qrController = {
 
             // Get user details
             const user = await User.findById(userId);
+          
+
+
             if (!user || !user.is_active) {
                 return res.status(404).json({
                     error: 'User Not Found',
@@ -167,6 +172,38 @@ const qrController = {
             );
 
             let attendanceResult;
+
+         // Declare variables outside the if blocks to make them accessible later
+let college_name = null;
+let course_name = null;
+let hostel_name = null;
+let semester_year = null;
+let designation = null;
+let employee_type = null;
+
+let user_type = user.user_type;
+
+if (user_type === 'student') {
+    const studentDetails = await student_details.findOne({ user_id: user._id });
+
+    if (studentDetails) {
+        college_name = studentDetails.college_name;
+        course_name = studentDetails.course_name;
+        hostel_name = studentDetails.hostel_details?.hostel_name;
+        semester_year = studentDetails.academic_details?.semester;
+    }
+}
+
+if (user_type === 'employee') {
+    const employeeDetails = await employee_details.findOne({ user_id: user._id });
+
+    if (employeeDetails) {
+        designation = employeeDetails.designation;
+        employee_type = employeeDetails.employee_type;
+    }
+}
+
+
             
             if (mealConfirmation) {
                 // Update existing confirmation with attendance
@@ -219,18 +256,36 @@ const qrController = {
                 };
             }
 
-            res.json({
-                message: `Attendance marked successfully for ${currentMealType}`,
-                user: {
-                    id: user._id,
-                    name: user.name,
-                    tmu_code: user.tmu_code,
-                    user_type: user.user_type
-                },
-                attendance: attendanceResult,
-                scanned_by: scannerId,
-                scanned_at: new Date()
-            });
+            const userResponse = {
+    id: user._id,
+    name: user.name,
+    tmu_code: tmu_code,
+    user_type: user_type,
+    user_department: user.department || null
+};
+
+
+         if (user_type === 'student') {
+    userResponse.college_name = college_name;
+    userResponse.course_name = course_name;
+    userResponse.hostel_name = hostel_name;
+    userResponse.semester_year = semester_year;
+}
+
+if (user_type === 'employee') {
+    userResponse.designation = designation;
+    userResponse.employee_type = employee_type;
+}
+
+// --- 3. Send the Final JSON Response ---
+
+res.status(200).json({
+    message: `Attendance marked successfully for ${currentMealType}`,
+    user: userResponse, // Use the dynamically constructed user object
+    attendance: attendanceResult,
+    scanned_by: scannerId,
+    scanned_at: new Date()
+});
 
         } catch (error) {
             console.error('QR scan error:', error);
