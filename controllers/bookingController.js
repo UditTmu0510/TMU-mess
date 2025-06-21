@@ -1,6 +1,7 @@
 const { ObjectId } = require('mongodb');
 const OneTimeBooking = require('../models/OneTimeBooking');
 const ParentBooking = require('../models/ParentBooking');
+const GuestBooking = require('../models/GuestBooking');
 const MessSubscription = require('../models/MessSubscription');
 const MealTiming = require('../models/MealTiming');
 const User = require('../models/User');
@@ -8,6 +9,79 @@ const { formatDate, isDateInPast, addDays, convertToIST, getCurrentISTDate } = r
 const { MEAL_TYPES, BOOKING_TYPES, SUBSCRIPTION_TYPES } = require('../utils/constants');
 
 const bookingController = {
+    createGuestMealBooking: async (req, res) => {
+        try {
+            const { booking_date, number_of_guests, meal_types } = req.body;
+            const { id: booked_by, user_type: booked_by_usertype } = req.user;
+
+            if (!booking_date || !number_of_guests || !meal_types || !Array.isArray(meal_types) || meal_types.length === 0) {
+                return res.status(400).json({ error: 'Invalid input', details: 'Missing required fields.' });
+            }
+
+            if (isDateInPast(booking_date)) {
+                return res.status(400).json({ error: 'Invalid Date', details: 'Cannot book for past dates.' });
+            }
+
+            const mealTimings = await MealTiming.getAll();
+            let totalAmount = 0;
+            for (const mealType of meal_types) {
+                const timing = mealTimings.find(t => t.meal_type === mealType);
+                if (!timing) {
+                    return res.status(400).json({ error: 'Invalid Meal Type', details: `Meal type '${mealType}' not found.` });
+                }
+                totalAmount += timing.per_meal_cost;
+            }
+
+            totalAmount *= number_of_guests;
+
+            const bookingData = {
+                booked_by,
+                booked_by_usertype,
+                booking_date,
+                number_of_guests,
+                meal_types,
+                total_amount: totalAmount
+            };
+
+            const booking = await GuestBooking.create(bookingData);
+
+            res.status(201).json({
+                message: 'Guest booking created successfully',
+                booking: {
+                    id: booking._id,
+                    booking_date: booking.booking_date,
+                    number_of_guests: booking.number_of_guests,
+                    meal_types: booking.meal_types,
+                    total_amount: booking.total_amount,
+                    payment_status: booking.payment.status
+                }
+            });
+        } catch (error) {
+            console.error('Create guest meal booking error:', error);
+            res.status(500).json({ error: 'Guest Booking Creation Failed', details: error.message });
+        }
+    },
+
+    getMyGuestBookings: async (req, res) => {
+        try {
+            const bookings = await GuestBooking.findByBooker(req.user.id);
+            res.json({
+                message: 'Your guest bookings retrieved successfully',
+                bookings: bookings.map(b => ({
+                    id: b._id,
+                    booking_date: b.booking_date,
+                    number_of_guests: b.number_of_guests,
+                    meal_types: b.meal_types,
+                    total_amount: b.total_amount,
+                    payment_status: b.payment.status
+                }))
+            });
+        } catch (error) {
+            console.error('Get my guest bookings error:', error);
+            res.status(500).json({ error: 'Failed to retrieve guest bookings', details: error.message });
+        }
+    },
+
     // Create employee booking
     createEmployeeBooking: async (req, res) => {
         try {

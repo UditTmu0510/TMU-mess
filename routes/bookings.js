@@ -4,6 +4,18 @@ const bookingController = require('../controllers/bookingController');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 const { validateBookingData } = require('../middleware/validation');
 
+// Guest meal bookings
+router.post('/guest-meal',
+    authenticateToken,
+    authorizeRoles('student', 'employee'),
+    bookingController.createGuestMealBooking
+);
+
+router.get('/my-guest-bookings',
+    authenticateToken,
+    bookingController.getMyGuestBookings
+);
+
 // One-time bookings
 // Create employee booking
 router.post('/employee', 

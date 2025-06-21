@@ -8,6 +8,7 @@ const MessSubscription = require('../models/MessSubscription');
 const MealTiming = require('../models/MealTiming');
 const { MEAL_TYPES } = require('../utils/constants');
 const { convertToIST, getCurrentISTDate } = require('../utils/helpers');
+const GuestBooking = require('../models/GuestBooking');
 
 /**
  * QR Code Controller for Dynamic QR Generation and Attendance Marking
@@ -61,6 +62,51 @@ const qrController = {
         }
     },
 
+    generateGuestBookingQRCode: async (req, res) => {
+        try {
+            const { bookingId } = req.params;
+            const userId = req.user.id;
+
+            const booking = await GuestBooking.findById(bookingId);
+
+            if (!booking) {
+                return res.status(404).json({ error: 'Booking Not Found' });
+            }
+
+            if (booking.booked_by.toString() !== userId.toString()) {
+                return res.status(403).json({ error: 'Access Denied' });
+            }
+
+            const timeWindow = Math.floor(Date.now() / 5000) * 5000;
+            const qrData = {
+                bookingId: booking._id,
+                timestamp: timeWindow,
+                type: 'guest_meal_attendance'
+            };
+
+            const qrString = JSON.stringify(qrData);
+            const qrHash = crypto.createHmac('sha256', process.env.JWT_SECRET || 'default-secret')
+                .update(qrString)
+                .digest('hex');
+
+            const qrPayload = {
+                data: Buffer.from(qrString).toString('base64'),
+                hash: qrHash,
+                expires: timeWindow + 5000
+            };
+
+            res.json({
+                message: 'Guest booking QR code generated successfully',
+                qr_code: qrPayload,
+                booking_id: bookingId
+            });
+
+        } catch (error) {
+            console.error('Generate Guest Booking QR code error:', error);
+            res.status(500).json({ error: 'QR Code Generation Failed', details: error.message });
+        }
+    },
+
     /**
      * Scan QR code and mark meal attendance
      * Only accessible by mess staff
@@ -110,7 +156,11 @@ const qrController = {
                 });
             }
 
-            const { userId, type } = decodedData;
+            const { userId, type, bookingId } = decodedData;
+
+            if (type === 'guest_meal_attendance') {
+                return handleGuestMealAttendance(req, res, bookingId, scannerId);
+            }
             
             if (type !== 'meal_attendance') {
                 return res.status(400).json({
@@ -418,5 +468,65 @@ res.status(200).json({
         }
     }
 };
+
+async function handleGuestMealAttendance(req, res, bookingId, scannerId) {
+    try {
+        const booking = await GuestBooking.findById(bookingId);
+
+        if (!booking) {
+            return res.status(404).json({ error: 'Guest Booking Not Found' });
+        }
+
+        const now = getCurrentISTDate();
+        const currentTime24 = now.toISOString().slice(11, 19);
+
+        const mealTimings = await MealTiming.getAll();
+        let currentMealType = null;
+
+        for (const timing of mealTimings) {
+            if (currentTime24 >= timing.start_time && currentTime24 <= timing.end_time) {
+                currentMealType = timing.meal_type;
+                break;
+            }
+        }
+
+        if (!currentMealType) {
+            return res.status(400).json({ error: 'No Active Meal Time' });
+        }
+
+        const mealInBooking = booking.attendance.find(a => a.meal_type === currentMealType);
+
+        if (!mealInBooking) {
+            return res.status(400).json({ error: 'Meal Not Booked', details: `This booking does not include ${currentMealType}.` });
+        }
+
+        if (mealInBooking.attended) {
+            return res.status(409).json({ error: 'Already Attended', details: `This guest booking has already been used for ${currentMealType}.` });
+        }
+
+        await GuestBooking.markAttendance(bookingId, currentMealType, scannerId);
+
+        const booker = await User.findById(booking.booked_by);
+
+        res.json({
+            message: `Guest attendance marked successfully for ${currentMealType}`,
+            booking_type: 'guest_meal',
+            attendance: {
+                booking_id: booking._id,
+                meal_type: currentMealType,
+                number_of_guests: booking.number_of_guests,
+                status: 'ATTENDED'
+            },
+            booked_by: {
+                name: booker.name,
+                tmu_code: booker.tmu_code
+            },
+            scanned_at: getCurrentISTDate()
+        });
+    } catch (error) {
+        console.error('Guest meal attendance error:', error);
+        res.status(500).json({ error: 'Guest Attendance Failed', details: error.message });
+    }
+}
 
 module.exports = qrController;

@@ -10,6 +10,12 @@ router.get('/generate',
     qrController.generateUserQRCode
 );
 
+// Generate guest booking QR code
+router.get('/guest-booking/:bookingId',
+    authenticateToken,
+    qrController.generateGuestBookingQRCode
+);
+
 // Scan QR code for meal attendance
 // Only accessible by mess staff
 router.post('/scan-attendance', 
