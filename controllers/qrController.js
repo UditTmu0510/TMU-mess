@@ -77,11 +77,25 @@ const qrController = {
                 return res.status(403).json({ error: 'Access Denied' });
             }
 
-            const timeWindow = Math.floor(Date.now() / 5000) * 5000;
+            const mealTimings = await MealTiming.getAll();
+            let lastMealEndTime = '00:00:00';
+
+            for (const mealType of booking.meal_types) {
+                const timing = mealTimings.find(t => t.meal_type === mealType);
+                if (timing && timing.end_time > lastMealEndTime) {
+                    lastMealEndTime = timing.end_time;
+                }
+            }
+
+            const [hours, minutes, seconds] = lastMealEndTime.split(':').map(Number);
+            const expiryDate = new Date(booking.booking_date);
+            expiryDate.setHours(hours, minutes, seconds, 0);
+            expiryDate.setMinutes(expiryDate.getMinutes() + 30); // Add 30-minute buffer
+
             const qrData = {
                 bookingId: booking._id,
-                timestamp: timeWindow,
-                type: 'guest_meal_attendance'
+                type: 'guest_meal_attendance',
+                expires: expiryDate.getTime()
             };
 
             const qrString = JSON.stringify(qrData);
@@ -92,7 +106,7 @@ const qrController = {
             const qrPayload = {
                 data: Buffer.from(qrString).toString('base64'),
                 hash: qrHash,
-                expires: timeWindow + 5000
+                expires: expiryDate.getTime()
             };
 
             res.json({
@@ -147,9 +161,16 @@ const qrController = {
                 });
             }
 
-            // Check if QR code is expired (5 second window + 30 second grace period)
+            // Check if QR code is expired
             const currentTime = Date.now();
-            if (currentTime > decodedData.timestamp + 35000) {
+            if (decodedData.expires && currentTime > decodedData.expires) {
+                return res.status(400).json({
+                    error: 'Expired QR Code',
+                    details: 'QR code has expired'
+                });
+            }
+            
+            if (!decodedData.expires && currentTime > decodedData.timestamp + 35000) {
                 return res.status(400).json({
                     error: 'Expired QR Code',
                     details: 'QR code has expired, please refresh'

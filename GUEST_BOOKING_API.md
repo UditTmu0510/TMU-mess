@@ -91,9 +91,9 @@ Generates a time-sensitive QR code for a specific guest booking.
 {
   "message": "Guest booking QR code generated successfully",
   "qr_code": {
-    "data": "eyJib29raW5nSWQiOiI2MGM3MmIyZjliMWQ4YzAwMWY4ZTRjNmEiLCJ0aW1lc3RhbXAiOjE2MjM4OTI4MDAwMDAsInR5cGUiOiJndWVzdF9tZWFsX2F0dGVuZGFuY2UifQ==",
+    "data": "eyJib29raW5nSWQiOiI2MGM3MmIyZjliMWQ4YzAwMWY4ZTRjNmEiLCJ0eXBlIjoiZ3Vlc3RfbWVhbF9hdHRlbmRhbmNlIiwiZXhwaXJlcyI6MTYyNTk0MzYwMDAwMH0=",
     "hash": "a1b2c3d4e5f6...",
-    "expires": 1623892805000
+    "expires": 1625943600000
   },
   "booking_id": "60c72b2f9b1d8c001f8e4c6a"
 }
