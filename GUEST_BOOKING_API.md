@@ -47,6 +47,41 @@ Creates a new meal booking for a specified number of guests.
 
 ---
 
+## 5. Get Meal Prices
+
+- **Endpoint:** `GET /api/meals/prices`
+- **Description:** Retrieves the prices for all available meal types.
+- **Authentication:** None
+- **Request Body:** None
+- **Success Response:**
+  - `200 OK`
+  ```json
+  {
+      "message": "Meal prices retrieved successfully",
+      "meal_prices": [
+          {
+              "meal_type": "breakfast",
+              "price": 25
+          },
+          {
+              "meal_type": "lunch",
+              "price": 50
+          },
+          {
+              "meal_type": "snacks",
+              "price": 20
+          },
+          {
+              "meal_type": "dinner",
+              "price": 60
+          }
+      ]
+  }
+  ```
+- **Error Response:**
+    - `500 Internal Server Error` on failure.
+---
+
 ## 2. Get My Guest Bookings
 
 Retrieves a list of all guest bookings made by the authenticated user.

@@ -7,6 +7,9 @@ const { validateMealConfirmation } = require('../middleware/validation');
 // Get meal timings
 router.get('/timings', mealController.getMealTimings);
 
+// Get all meal prices
+router.get('/prices', mealController.getMealPrices);
+
 
 // Confirm meal
 router.post('/confirm', 

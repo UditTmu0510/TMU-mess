@@ -27,6 +27,28 @@ const mealController = {
         }
     },
 
+    getMealPrices: async (req, res) => {
+        try {
+            const mealTimings = await MealTiming.getAll();
+            const mealPrices = mealTimings.map(meal => ({
+                meal_type: meal.meal_type,
+                price: meal.per_meal_cost
+            }));
+            
+            res.json({
+                message: 'Meal prices retrieved successfully',
+                meal_prices: mealPrices
+            });
+
+        } catch (error) {
+            console.error('Get meal prices error:', error);
+            res.status(500).json({
+                error: 'Meal Prices Retrieval Failed',
+                details: error.message
+            });
+        }
+    },
+
     // Confirm meal
     // confirmMeal: async (req, res) => {
     //     try {
