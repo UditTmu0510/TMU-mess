@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { connectDB } = require('./config/database');
+const scheduler = require('./services/scheduler');
 
 // Route imports
 const authRoutes = require('./routes/auth');
@@ -155,6 +156,7 @@ const startServer = async () => {
         try {
             await connectDB();
             console.log('✅ Database connected successfully');
+            scheduler.init();
         } catch (dbError) {
             console.warn('⚠️ Database connection failed, server running without DB:', dbError.message);
         }

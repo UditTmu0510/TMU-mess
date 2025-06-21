@@ -15,7 +15,7 @@ class User {
         this.password_hash = userData.password_hash;
         this.is_active = userData.is_active !== undefined ? userData.is_active : true;
         this.department = userData.department || null;
-        this.mess_offense = userData.mess_offense || { count: 0, month_key: '' };
+        this.mess_offense = userData.mess_offense || { count: 0, month: '' };
         this.created_at = getCurrentISTDate();
         this.updated_at = getCurrentISTDate();
     }
@@ -68,23 +68,26 @@ class User {
         return await db.collection('users').find(query).toArray();
     }
 
-    static async updateMessOffense(userId, monthKey) {
+    static async logMessOffense(userId) {
         const db = getDB();
         const user = await this.findById(userId);
-        
+
         if (!user) {
             throw new Error('User not found');
         }
 
+        const now = getCurrentISTDate();
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
         let newOffenseCount = 1;
-        if (user.mess_offense && user.mess_offense.month_key === monthKey) {
+        if (user.mess_offense && user.mess_offense.month === currentMonth) {
             newOffenseCount = user.mess_offense.count + 1;
         }
 
         await this.updateById(userId, {
             mess_offense: {
                 count: newOffenseCount,
-                month_key: monthKey
+                month: currentMonth
             }
         });
 

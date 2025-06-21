@@ -302,6 +302,25 @@ static async findByUserAndDate(userId, mealDate, mealType = null) {
 
         return await db.collection('meal_confirmations').aggregate(pipeline).toArray();
     }
+
+    static async findAllConfirmationsByDateAndMeal(date, mealType) {
+        const db = getDB();
+        const targetDate = convertToIST(date);
+        const startOfDay = new Date(targetDate);
+        startOfDay.setUTCHours(0, 0, 0, 0);
+        const endOfDay = new Date(targetDate);
+        endOfDay.setUTCHours(23, 59, 59, 999);
+
+        const query = {
+            meal_date: {
+                $gte: startOfDay,
+                $lte: endOfDay
+            },
+            meal_type: mealType
+        };
+
+        return await db.collection('meal_confirmations').find(query).toArray();
+    }
 }
 
 module.exports = MealConfirmation;

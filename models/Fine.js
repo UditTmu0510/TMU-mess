@@ -122,38 +122,15 @@ class Fine {
         return result.length > 0 ? result[0] : { totalAmount: 0, count: 0 };
     }
 
-    static async createNoShowFine(userId, confirmationId, mealType, baseAmount) {
-        const fineAmount = baseAmount * 1.5; // 50% penalty for no-show
+    static async createMessOffenseFine(userId, confirmationId, mealType, mealCost) {
+        const fineAmount = mealCost * 1.5;
         
         return await this.create({
             user_id: userId,
-            fine_type: 'no_show',
+            fine_type: 'mess_offense',
             amount: fineAmount,
-            reason: `No-show for ${mealType} meal`,
+            reason: `Mess offense for ${mealType} meal`,
             related_confirmation_id: confirmationId
-        });
-    }
-
-    static async createLateCancellationFine(userId, confirmationId, mealType, baseAmount) {
-        const fineAmount = baseAmount * 0.5; // 50% penalty for late cancellation
-        
-        return await this.create({
-            user_id: userId,
-            fine_type: 'late_cancellation',
-            amount: fineAmount,
-            reason: `Late cancellation for ${mealType} meal`,
-            related_confirmation_id: confirmationId
-        });
-    }
-
-    static async createMultipleOffenseFine(userId, offenseCount, baseAmount = 100) {
-        const fineAmount = baseAmount * offenseCount; // Escalating fine
-        
-        return await this.create({
-            user_id: userId,
-            fine_type: 'multiple_offense',
-            amount: fineAmount,
-            reason: `Multiple meal offenses (${offenseCount} this month)`
         });
     }
 

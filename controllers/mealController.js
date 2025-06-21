@@ -694,16 +694,6 @@ getWeeklyMealConfirmationStatus: async (req, res) => {
 
             await MealConfirmation.updateAttendance(confirmationId, attendanceData);
 
-            // Update user's mess offense count if no-show
-            if (!attended) {
-                const monthKey = calculateMonthKey(confirmation.meal_date);
-                const offenseCount = await User.updateMessOffense(confirmation.user_id, monthKey);
-                
-                // Apply additional fine for multiple offenses
-                if (offenseCount >= 3) {
-                    await Fine.createMultipleOffenseFine(confirmation.user_id, offenseCount);
-                }
-            }
 
             res.json({
                 message: 'Attendance marked successfully',

@@ -138,12 +138,6 @@ router.post('/maintenance/expire-subscriptions',
     adminController.expireOldSubscriptions
 );
 
-router.post('/maintenance/process-no-shows', 
-    authenticateToken, 
-    authorizeRoles('mess_staff', 'admin'), 
-    adminController.processNoShows
-);
-
 router.get('/maintenance/system-health', 
     authenticateToken, 
     authorizeRoles('admin'), 
