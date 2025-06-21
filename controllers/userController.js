@@ -7,7 +7,7 @@ const Fine = require('../models/Fine');
 const MessSubscription = require('../models/MessSubscription');
 const OneTimeBooking = require('../models/OneTimeBooking');
 const ParentBooking = require('../models/ParentBooking');
-const { formatDateRange, calculateMonthKey } = require('../utils/helpers');
+const { formatDateRange, calculateMonthKey, convertToIST, getCurrentISTDate } = require('../utils/helpers');
 
 const userController = {
     // Get current user profile
@@ -231,7 +231,7 @@ const userController = {
     getDashboard: async (req, res) => {
         try {
             const userId = req.user.id;
-            const today = new Date();
+            const today = getCurrentISTDate();
             const weekStart = new Date(today);
             weekStart.setDate(today.getDate() - today.getDay());
 
@@ -443,7 +443,7 @@ const userController = {
             await User.updateById(userId, {
                 is_active,
                 status_updated_by: req.user.id,
-                status_updated_at: new Date(),
+                status_updated_at: getCurrentISTDate(),
                 status_reason: reason || null
             });
 

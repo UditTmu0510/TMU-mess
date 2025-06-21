@@ -4,7 +4,7 @@ const ParentBooking = require('../models/ParentBooking');
 const MessSubscription = require('../models/MessSubscription');
 const MealTiming = require('../models/MealTiming');
 const User = require('../models/User');
-const { formatDate, isDateInPast, addDays } = require('../utils/helpers');
+const { formatDate, isDateInPast, addDays, convertToIST, getCurrentISTDate } = require('../utils/helpers');
 const { MEAL_TYPES, BOOKING_TYPES, SUBSCRIPTION_TYPES } = require('../utils/constants');
 
 const bookingController = {
@@ -445,7 +445,7 @@ const bookingController = {
                 });
             }
 
-            if (new Date(end_date) <= new Date(start_date)) {
+            if (convertToIST(end_date) <= convertToIST(start_date)) {
                 return res.status(400).json({
                     error: 'Invalid End Date',
                     details: 'End date must be after start date'
@@ -559,7 +559,7 @@ const bookingController = {
             }
 
             // Validate new end date
-            if (new Date(new_end_date) <= new Date()) {
+            if (convertToIST(new_end_date) <= getCurrentISTDate()) {
                 return res.status(400).json({
                     error: 'Invalid End Date',
                     details: 'New end date must be in the future'

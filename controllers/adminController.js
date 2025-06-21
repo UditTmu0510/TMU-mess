@@ -8,14 +8,14 @@ const Fine = require('../models/Fine');
 const MessSubscription = require('../models/MessSubscription');
 const OneTimeBooking = require('../models/OneTimeBooking');
 const ParentBooking = require('../models/ParentBooking');
-const { formatDate, calculateDateRange, exportToCSV } = require('../utils/helpers');
+const { formatDate, calculateDateRange, exportToCSV, convertToIST, getCurrentISTDate } = require('../utils/helpers');
 const { getDB } = require('../config/database');
 
 const adminController = {
     // Get admin dashboard data
     getDashboard: async (req, res) => {
         try {
-            const today = new Date();
+            const today = getCurrentISTDate();
             const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
             const startOfWeek = new Date(today);
             startOfWeek.setDate(today.getDate() - today.getDay());
@@ -238,7 +238,7 @@ const adminController = {
             const result = await User.updateById(userId, {
                 is_active: true,
                 activated_by: req.user.id,
-                activated_at: new Date()
+                activated_at: getCurrentISTDate()
             });
 
             if (result.matchedCount === 0) {
@@ -277,7 +277,7 @@ const adminController = {
             const result = await User.updateById(userId, {
                 is_active: false,
                 deactivated_by: req.user.id,
-                deactivated_at: new Date(),
+                deactivated_at: getCurrentISTDate(),
                 deactivation_reason: reason || null
             });
 
@@ -529,8 +529,8 @@ const adminController = {
             );
 
             // Get booking revenue for the month
-            const startDate = new Date(year, month - 1, 1);
-            const endDate = new Date(year, month, 1);
+            const startDate = convertToIST(new Date(year, month - 1, 1));
+            const endDate = convertToIST(new Date(year, month, 1));
 
             const db = getDB();
             const bookingRevenue = await db.collection('one_time_bookings').aggregate([
@@ -616,7 +616,7 @@ const adminController = {
                 });
             }
 
-            const targetDate = new Date(date);
+            const targetDate = convertToIST(date);
             const nextDate = new Date(targetDate);
             nextDate.setDate(nextDate.getDate() + 1);
 
@@ -838,7 +838,7 @@ const adminController = {
                 recipients: recipients || [],
                 priority,
                 sent_by: req.user.id,
-                sent_at: new Date(),
+                sent_at: getCurrentISTDate(),
                 status: 'sent'
             };
 
@@ -904,7 +904,7 @@ const adminController = {
             const exportData = {
                 date_range: { startDate, endDate },
                 export_type: 'meal_confirmations',
-                generated_at: new Date(),
+                generated_at: getCurrentISTDate(),
                 generated_by: req.user.name,
                 download_url: '/exports/meal-confirmations-' + Date.now() + '.csv'
             };
@@ -938,7 +938,7 @@ const adminController = {
             const exportData = {
                 date_range: { startDate, endDate },
                 export_type: 'bookings',
-                generated_at: new Date(),
+                generated_at: getCurrentISTDate(),
                 generated_by: req.user.name,
                 download_url: '/exports/bookings-' + Date.now() + '.csv'
             };
@@ -962,7 +962,7 @@ const adminController = {
         try {
             const exportData = {
                 export_type: 'users',
-                generated_at: new Date(),
+                generated_at: getCurrentISTDate(),
                 generated_by: req.user.name,
                 download_url: '/exports/users-' + Date.now() + '.csv'
             };
@@ -1033,7 +1033,7 @@ const adminController = {
                     // Mark as not attended
                     await MealConfirmation.updateAttendance(noShow._id, {
                         attended: false,
-                        qr_scanned_at: new Date(),
+                        qr_scanned_at: getCurrentISTDate(),
                         notes: 'Auto-processed no-show'
                     });
 
@@ -1108,7 +1108,7 @@ const adminController = {
                     memory_usage: process.memoryUsage(),
                     node_version: process.version
                 },
-                timestamp: new Date()
+                timestamp: getCurrentISTDate()
             };
 
             res.json({

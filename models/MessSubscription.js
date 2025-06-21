@@ -1,5 +1,6 @@
 const { getDB } = require('../config/database');
 const { ObjectId } = require('mongodb');
+const { convertToIST, getCurrentISTDate } = require('../utils/helpers');
 
 class MessSubscription {
     constructor(data) {
@@ -7,11 +8,11 @@ class MessSubscription {
         this.subscription_type = data.subscription_type;
         this.meal_types = data.meal_types;
         this.monthly_cost = data.monthly_cost;
-        this.start_date = new Date(data.start_date);
-        this.end_date = new Date(data.end_date);
+        this.start_date = convertToIST(data.start_date);
+        this.end_date = convertToIST(data.end_date);
         this.status = data.status || 'active';
         this.payment_reference = data.payment_reference || null;
-        this.created_at = new Date();
+        this.created_at = getCurrentISTDate();
     }
 
     static async create(data) {
@@ -31,7 +32,7 @@ class MessSubscription {
 
     static async findActiveByUserId(userId) {
         const db = getDB();
-        const now = new Date();
+        const now = getCurrentISTDate();
         
         return await db.collection('mess_subscriptions').findOne({
             user_id: new ObjectId(userId),
@@ -69,10 +70,10 @@ class MessSubscription {
             { _id: new ObjectId(subscriptionId) },
             {
                 $set: {
-                    end_date: new Date(newEndDate),
+                    end_date: convertToIST(newEndDate),
                     status: 'active',
                     payment_reference: paymentReference,
-                    renewed_at: new Date()
+                    renewed_at: getCurrentISTDate()
                 }
             }
         );
@@ -86,7 +87,7 @@ class MessSubscription {
             return { hasSubscription: false, message: 'No active subscription found' };
         }
 
-        const targetDate = new Date(date);
+        const targetDate = convertToIST(date);
         if (targetDate < subscription.start_date || targetDate > subscription.end_date) {
             return { hasSubscription: false, message: 'Date outside subscription period' };
         }
@@ -104,13 +105,13 @@ class MessSubscription {
 
     static async getExpiringSubscriptions(daysBeforeExpiry = 7) {
         const db = getDB();
-        const futureDate = new Date();
+        const futureDate = getCurrentISTDate();
         futureDate.setDate(futureDate.getDate() + daysBeforeExpiry);
 
         return await db.collection('mess_subscriptions').find({
             status: 'active',
             end_date: {
-                $gte: new Date(),
+                $gte: getCurrentISTDate(),
                 $lte: futureDate
             }
         }).toArray();
@@ -118,7 +119,7 @@ class MessSubscription {
 
     static async expireOldSubscriptions() {
         const db = getDB();
-        const now = new Date();
+        const now = getCurrentISTDate();
         
         const result = await db.collection('mess_subscriptions').updateMany(
             {
@@ -215,8 +216,8 @@ class MessSubscription {
 
     static async getMonthlyRevenue(year, month) {
         const db = getDB();
-        const startDate = new Date(year, month - 1, 1);
-        const endDate = new Date(year, month, 1);
+        const startDate = convertToIST(new Date(year, month - 1, 1));
+        const endDate = convertToIST(new Date(year, month, 1));
 
         const pipeline = [
             {

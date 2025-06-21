@@ -7,6 +7,7 @@ const MealConfirmation = require('../models/MealConfirmation');
 const MessSubscription = require('../models/MessSubscription');
 const MealTiming = require('../models/MealTiming');
 const { MEAL_TYPES } = require('../utils/constants');
+const { convertToIST, getCurrentISTDate } = require('../utils/helpers');
 
 /**
  * QR Code Controller for Dynamic QR Generation and Attendance Marking
@@ -131,8 +132,8 @@ const qrController = {
             }
 
             // Determine current meal type based on time
-            const now = new Date();
-            const currentTime24 = now.toTimeString().slice(0, 8); // HH:MM:SS format
+            const now = getCurrentISTDate();
+            const currentTime24 = now.toISOString().slice(11, 19); // HH:MM:SS format from ISO string
             
             const mealTimings = await MealTiming.getAll();
             let currentMealType = null;
@@ -152,7 +153,7 @@ const qrController = {
             }
 
             // Check if user has active subscription for this meal type
-            const today = new Date();
+            const today = getCurrentISTDate();
             today.setHours(0, 0, 0, 0);
             
             const subscriptionStatus = await MessSubscription.checkUserSubscriptionStatus(
@@ -189,7 +190,7 @@ const qrController = {
 
                 const attendanceData = {
                     attended: true,
-                    attended_at: new Date(),
+                    attended_at: getCurrentISTDate(),
                     scanner_id: scannerId,
                     scan_method: 'qr_code'
                 };
@@ -212,7 +213,7 @@ const qrController = {
                     notes: 'Walk-in attendance via QR scan',
                     meal_cost: 0, // Covered by subscription
                     attended: true,
-                    attended_at: new Date(),
+                    attended_at: getCurrentISTDate(),
                     scanner_id: scannerId,
                     scan_method: 'qr_code',
                     is_freeze: false
@@ -297,7 +298,7 @@ res.status(200).json({
     user: userResponse, // Use the dynamically constructed user object
     attendance: attendanceResult,
     scanned_by: scannerId,
-    scanned_at: new Date()
+    scanned_at: getCurrentISTDate()
 });
 
 
@@ -316,8 +317,8 @@ res.status(200).json({
      */
     getCurrentMealStatus: async (req, res) => {
         try {
-            const now = new Date();
-            const currentTime24 = now.toTimeString().slice(0, 8);
+            const now = getCurrentISTDate();
+            const currentTime24 = now.toISOString().slice(11, 19);
             
             const mealTimings = await MealTiming.getAll();
             let activeMeal = null;

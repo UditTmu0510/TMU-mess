@@ -1,20 +1,21 @@
 const { getDB } = require('../config/database');
 const { ObjectId } = require('mongodb');
+const { convertToIST, getCurrentISTDate } = require('../utils/helpers');
 
 class MealConfirmation {
 
     
     constructor(data) {
         this.user_id = new ObjectId(data.user_id);
-        this.meal_date = new Date(data.meal_date);
+        this.meal_date = convertToIST(data.meal_date);
         this.meal_type = data.meal_type;
-        this.confirmed_at = new Date();
+        this.confirmed_at = getCurrentISTDate();
         this.attended = data.attended || null;
-        this.qr_scanned_at = data.qr_scanned_at || null;
+        this.qr_scanned_at = data.qr_scanned_at ? convertToIST(data.qr_scanned_at) : null;
         this.qr_scanner_id = data.qr_scanner_id ? new ObjectId(data.qr_scanner_id) : null;
         this.fine_applied = data.fine_applied || 0;
         this.notes = data.notes || '';
-        this.created_at = new Date();
+        this.created_at = getCurrentISTDate();
     }
 
     static async create(data) {
@@ -50,7 +51,7 @@ static async findByUserAndDate(userId, mealDate, mealType = null) {
     const db = getDB();
 
     // Ensure mealDate is treated as a date without time for querying
-    const inputDate = new Date(mealDate);
+    const inputDate = convertToIST(mealDate);
     const startOfDay = new Date(inputDate);
     startOfDay.setUTCHours(0, 0, 0, 0); // Set to start of the day in UTC
     const endOfDay = new Date(inputDate);
@@ -87,7 +88,7 @@ static async findByUserAndDate(userId, mealDate, mealType = null) {
         const db = getDB();
         const updateData = {
             attended: attendanceData.attended,
-            qr_scanned_at: attendanceData.qr_scanned_at ? new Date(attendanceData.qr_scanned_at) : null,
+            qr_scanned_at: attendanceData.qr_scanned_at ? convertToIST(attendanceData.qr_scanned_at) : null,
             qr_scanner_id: attendanceData.qr_scanner_id ? new ObjectId(attendanceData.qr_scanner_id) : null
         };
 
@@ -112,8 +113,8 @@ static async findByUserAndDate(userId, mealDate, mealType = null) {
         return await db.collection('meal_confirmations').find({
             user_id: new ObjectId(userId),
             meal_date: {
-                $gte: new Date(startDate),
-                $lte: new Date(endDate)
+                $gte: convertToIST(startDate),
+                $lte: convertToIST(endDate)
             }
         }).sort({ meal_date: 1, meal_type: 1 }).toArray();
     }
@@ -130,7 +131,7 @@ static async findByUserAndDate(userId, mealDate, mealType = null) {
         // Explicitly map allowed update fields based on your schema
         // and ensure correct data types where necessary
         if (updateFields.confirmed_at !== undefined) {
-            $set.confirmed_at = new Date(updateFields.confirmed_at);
+            $set.confirmed_at = convertToIST(updateFields.confirmed_at);
         }
         if (updateFields.notes !== undefined) {
             $set.notes = updateFields.notes;
@@ -143,7 +144,7 @@ static async findByUserAndDate(userId, mealDate, mealType = null) {
             $set.attended = Boolean(updateFields.attended);
         }
         if (updateFields.qr_scanned_at !== undefined) {
-            $set.qr_scanned_at = updateFields.qr_scanned_at ? new Date(updateFields.qr_scanned_at) : null;
+            $set.qr_scanned_at = updateFields.qr_scanned_at ? convertToIST(updateFields.qr_scanned_at) : null;
         }
         if (updateFields.qr_scanner_id !== undefined) {
             $set.qr_scanner_id = updateFields.qr_scanner_id ? new ObjectId(updateFields.qr_scanner_id) : null;
@@ -169,7 +170,7 @@ static async findByUserAndDate(userId, mealDate, mealType = null) {
 
     static async getDailyConfirmationReport(date) {
         const db = getDB();
-        const targetDate = new Date(date);
+        const targetDate = convertToIST(date);
         
         const pipeline = [
             {
@@ -232,11 +233,11 @@ static async findByUserAndDate(userId, mealDate, mealType = null) {
 
     static async getNoShowUsers(date, mealType) {
         const db = getDB();
-        const cutoffTime = new Date();
+        const cutoffTime = getCurrentISTDate();
         cutoffTime.setHours(cutoffTime.getHours() - 2); // 2 hours after meal time
         
         return await db.collection('meal_confirmations').find({
-            meal_date: new Date(date),
+            meal_date: convertToIST(date),
             meal_type: mealType,
             attended: null,
             confirmed_at: { $lt: cutoffTime }
@@ -270,8 +271,8 @@ static async findByUserAndDate(userId, mealDate, mealType = null) {
                 $match: {
                     user_id: new ObjectId(userId),
                     meal_date: {
-                        $gte: new Date(startDate),
-                        $lt: endDate
+                        $gte: convertToIST(startDate),
+                        $lt: convertToIST(endDate)
                     }
                 }
             },

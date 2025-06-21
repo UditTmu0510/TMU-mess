@@ -1,6 +1,7 @@
 const { getDB } = require('../config/database');
 const { ObjectId } = require('mongodb');
 const bcrypt = require('bcryptjs');
+const { convertToIST, getCurrentISTDate } = require('../utils/helpers');
 
 class User {
     constructor(userData) {
@@ -15,8 +16,8 @@ class User {
         this.is_active = userData.is_active !== undefined ? userData.is_active : true;
         this.department = userData.department || null;
         this.mess_offense = userData.mess_offense || { count: 0, month_key: '' };
-        this.created_at = new Date();
-        this.updated_at = new Date();
+        this.created_at = getCurrentISTDate();
+        this.updated_at = getCurrentISTDate();
     }
 
     static async create(userData) {
@@ -48,7 +49,7 @@ class User {
 
     static async updateById(id, updateData) {
         const db = getDB();
-        updateData.updated_at = new Date();
+        updateData.updated_at = getCurrentISTDate();
         
         const result = await db.collection('users').updateOne(
             { _id: new ObjectId(id) },

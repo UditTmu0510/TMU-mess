@@ -1,5 +1,6 @@
 const { getDB } = require('../config/database');
 const { ObjectId } = require('mongodb');
+const { convertToIST, getCurrentISTDate } = require('../utils/helpers');
 
 class MealTiming {
     constructor(data) {
@@ -17,7 +18,7 @@ class MealTiming {
         this.confirmation_deadline_description = data.confirmation_deadline_description;
         this.per_meal_cost = data.per_meal_cost;
         this.is_active = data.is_active !== undefined ? data.is_active : true;
-        this.updated_at = new Date();
+        this.updated_at = getCurrentISTDate();
         this.updated_by = data.updated_by ? new ObjectId(data.updated_by) : null;
     }
 
@@ -43,7 +44,7 @@ class MealTiming {
 
     static async update(mealType, updateData, updatedBy) {
         const db = getDB();
-        updateData.updated_at = new Date();
+        updateData.updated_at = getCurrentISTDate();
         updateData.updated_by = new ObjectId(updatedBy);
         
         // CORRECTED: Query by 'meal_type' field to find the document to update
@@ -62,8 +63,8 @@ class MealTiming {
             throw new Error('Meal timing not found');
         }
 
-        const now = new Date();
-        const mealDateTime = new Date(targetDate);
+        const now = getCurrentISTDate();
+        const mealDateTime = convertToIST(targetDate);
         
         // Parse meal start time and set it on the meal date
         const [hours, minutes, seconds] = mealTiming.start_time.split(':');
@@ -115,7 +116,7 @@ class MealTiming {
                     confirmation_deadline_description: 'Confirm by 7 PM previous day',
                     per_meal_cost: 25.00,
                     is_active: true,
-                    updated_at: new Date(),
+                    updated_at: getCurrentISTDate(),
                     updated_by: null
                 },
                 {
@@ -126,7 +127,7 @@ class MealTiming {
                     confirmation_deadline_description: 'Confirm by 10 AM same day',
                     per_meal_cost: 50.00,
                     is_active: true,
-                    updated_at: new Date(),
+                    updated_at: getCurrentISTDate(),
                     updated_by: null
                 },
                 {
@@ -137,7 +138,7 @@ class MealTiming {
                     confirmation_deadline_description: 'Confirm by 3 PM same day',
                     per_meal_cost: 20.00,
                     is_active: true,
-                    updated_at: new Date(),
+                    updated_at: getCurrentISTDate(),
                     updated_by: null
                 },
                 {
@@ -148,7 +149,7 @@ class MealTiming {
                     confirmation_deadline_description: 'Confirm by 3 PM same day',
                     per_meal_cost: 60.00,
                     is_active: true,
-                    updated_at: new Date(),
+                    updated_at: getCurrentISTDate(),
                     updated_by: null
                 }
             ];

@@ -4,7 +4,7 @@ const MealConfirmation = require('../models/MealConfirmation');
 const MessSubscription = require('../models/MessSubscription');
 const Fine = require('../models/Fine');
 const User = require('../models/User');
-const { formatDate, isDateInPast, calculateMonthKey } = require('../utils/helpers');
+const { formatDate, isDateInPast, calculateMonthKey, convertToIST, getCurrentISTDate } = require('../utils/helpers');
 const { MEAL_TYPES, FINE_MULTIPLIERS } = require('../utils/constants');
 
 const mealController = {
@@ -139,7 +139,7 @@ confirmMeal: async (req, res) => {
             errors: []
         };
 
-        const today = new Date();
+        const today = getCurrentISTDate();
         today.setUTCHours(0, 0, 0, 0);
 
         // Process each day's confirmations
@@ -159,7 +159,7 @@ confirmMeal: async (req, res) => {
             // Correctly parse the date as UTC to avoid timezone shifts.
             // new Date('December 21, 2024') creates a local time date.
             // Appending ' UTC' treats the date as UTC from the start.
-            const parsedDate = new Date(`${date}, ${currentYear} UTC`);
+            const parsedDate = convertToIST(new Date(`${date}, ${currentYear}`));
 
             // Skip if date is in the past
             if (parsedDate < today) {
@@ -191,7 +191,7 @@ confirmMeal: async (req, res) => {
                         if (existingConfirmation) {
                             // Update existing confirmation (re-confirm)
                             const updateFields = {
-                                confirmed_at: new Date(),
+                                confirmed_at: getCurrentISTDate(),
                                 notes: '' // Reset notes on re-confirmation
                             };
 
@@ -319,14 +319,14 @@ getWeeklyMealConfirmationStatus: async (req, res) => {
     try {
         const userId = req.user.id;
 
-        const today = new Date();
+        const today = getCurrentISTDate();
         today.setUTCHours(0, 0, 0, 0); // Normalize to the start of today in UTC
 
         const weeklyStatus = [];
 
         // 1. Initialize the structure for the next 7 days, including is_freeze fields
         for (let i = 0; i < 7; i++) {
-            const currentDate = new Date(today);
+            const currentDate = new Date(today.getTime());
             currentDate.setDate(today.getDate() + i);
 
             const formattedDate = currentDate.toLocaleDateString('en-US', {
@@ -349,10 +349,10 @@ getWeeklyMealConfirmationStatus: async (req, res) => {
         }
 
         // 2. Define the date range for fetching confirmed meals
-        const startDate = new Date(today);
+        const startDate = new Date(today.getTime());
         startDate.setUTCHours(0, 0, 0, 0);
 
-        const endDate = new Date(today);
+        const endDate = new Date(today.getTime());
         endDate.setDate(today.getDate() + 6);
         endDate.setUTCHours(23, 59, 59, 999);
 
@@ -364,7 +364,7 @@ getWeeklyMealConfirmationStatus: async (req, res) => {
 
         // 4. Populate the weekly status with actual confirmed meals and their freeze status
         confirmedMeals.forEach(meal => {
-            const mealDate = new Date(meal.meal_date);
+            const mealDate = convertToIST(meal.meal_date);
             mealDate.setUTCHours(0,0,0,0); // Normalize meal date from DB
 
             const dayIndex = Math.floor((mealDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -435,7 +435,7 @@ getWeeklyMealConfirmationStatus: async (req, res) => {
     getTodaysMeals: async (req, res) => {
         try {
             const userId = req.user.id;
-            const today = formatDate(new Date());
+            const today = formatDate(getCurrentISTDate());
 
             const todaysMeals = await MealConfirmation.findByUserAndDate(userId, today);
             const mealTimings = await MealTiming.getAll();
@@ -481,8 +481,8 @@ getWeeklyMealConfirmationStatus: async (req, res) => {
             const userId = req.user.id;
             const { week_start } = req.query;
             
-            const startDate = week_start ? new Date(week_start) : (() => {
-                const today = new Date();
+            const startDate = week_start ? convertToIST(week_start) : (() => {
+                const today = getCurrentISTDate();
                 const start = new Date(today);
                 start.setDate(today.getDate() - today.getDay()); // Start of current week
                 return start;
@@ -583,7 +583,7 @@ getWeeklyMealConfirmationStatus: async (req, res) => {
             // Update attendance
             const attendanceData = {
                 attended: true,
-                qr_scanned_at: new Date(),
+                qr_scanned_at: getCurrentISTDate(),
                 qr_scanner_id: scannerId
             };
 
@@ -674,7 +674,7 @@ getWeeklyMealConfirmationStatus: async (req, res) => {
             // Update attendance
             const attendanceData = {
                 attended: attended,
-                qr_scanned_at: new Date(),
+                qr_scanned_at: getCurrentISTDate(),
                 qr_scanner_id: staffId,
                 notes: notes || ''
             };

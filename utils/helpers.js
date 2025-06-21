@@ -4,6 +4,21 @@ const { ObjectId } = require('mongodb');
  * Date and time utility functions
  */
 
+const convertToIST = (date) => {
+    if (!date) return null;
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return null;
+    
+    // IST is UTC+5:30
+    const offset = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(d.getTime() + offset);
+    return istDate;
+};
+
+const getCurrentISTDate = () => {
+    return convertToIST(new Date());
+};
+
 // Format date to YYYY-MM-DD string
 const formatDate = (date) => {
     if (!date) return null;
@@ -477,5 +492,7 @@ module.exports = {
     generateSecureToken,
     hashString,
     maskEmail,
-    maskPhone
+    maskPhone,
+    convertToIST,
+    getCurrentISTDate
 };

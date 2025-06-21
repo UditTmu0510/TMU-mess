@@ -139,7 +139,7 @@ app.use((req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 8000;
+const PORT = 8000;
 
 // Start server
 const startServer = async () => {

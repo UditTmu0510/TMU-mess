@@ -1,5 +1,6 @@
 const { getDB } = require('../config/database');
 const { ObjectId } = require('mongodb');
+const { convertToIST, getCurrentISTDate } = require('../utils/helpers');
 
 class Fine {
     constructor(data) {
@@ -18,7 +19,7 @@ class Fine {
             waived_by: null,
             reason: null
         };
-        this.created_at = new Date();
+        this.created_at = getCurrentISTDate();
     }
 
     static async create(data) {
@@ -57,7 +58,7 @@ class Fine {
         const updateData = {
             'payment.is_paid': true,
             'payment.reference': paymentReference,
-            'payment.paid_at': new Date()
+            'payment.paid_at': getCurrentISTDate()
         };
 
         if (paidBy) {
@@ -81,7 +82,7 @@ class Fine {
                     'waiver.is_waived': true,
                     'waiver.waived_by': new ObjectId(waivedBy),
                     'waiver.reason': reason,
-                    'waiver.waived_at': new Date()
+                    'waiver.waived_at': getCurrentISTDate()
                 }
             }
         );
@@ -158,8 +159,8 @@ class Fine {
 
     static async getDailyFineReport(date) {
         const db = getDB();
-        const startDate = new Date(date);
-        const endDate = new Date(date);
+        const startDate = convertToIST(date);
+        const endDate = new Date(startDate);
         endDate.setDate(endDate.getDate() + 1);
 
         const pipeline = [
@@ -206,8 +207,8 @@ class Fine {
 
     static async getMonthlyFineStats(year, month) {
         const db = getDB();
-        const startDate = new Date(year, month - 1, 1);
-        const endDate = new Date(year, month, 1);
+        const startDate = convertToIST(new Date(year, month - 1, 1));
+        const endDate = convertToIST(new Date(year, month, 1));
 
         const pipeline = [
             {

@@ -16,8 +16,8 @@ const seedData = {
             password: "password123",
             department: "Computer Science",
             is_active: true,
-            created_at: new Date("2024-01-15"),
-            last_login: new Date("2025-06-10")
+            created_at: new Date("2024-01-15T00:00:00Z"),
+            last_login: new Date("2025-06-10T00:00:00Z")
         },
         {
             tmu_code: "STU002",
@@ -28,8 +28,8 @@ const seedData = {
             password: "password123",
             department: "Electronics",
             is_active: true,
-            created_at: new Date("2024-01-16"),
-            last_login: new Date("2025-06-11")
+            created_at: new Date("2024-01-16T00:00:00Z"),
+            last_login: new Date("2025-06-11T00:00:00Z")
         },
         {
             tmu_code: "STU003",
@@ -40,8 +40,8 @@ const seedData = {
             password: "password123",
             department: "Mechanical",
             is_active: true,
-            created_at: new Date("2024-01-17"),
-            last_login: new Date("2025-06-09")
+            created_at: new Date("2024-01-17T00:00:00Z"),
+            last_login: new Date("2025-06-09T00:00:00Z")
         },
         {
             tmu_code: "STU004",
@@ -52,8 +52,8 @@ const seedData = {
             password: "password123",
             department: "Civil",
             is_active: true,
-            created_at: new Date("2024-01-18"),
-            last_login: new Date("2025-06-08")
+            created_at: new Date("2024-01-18T00:00:00Z"),
+            last_login: new Date("2025-06-08T00:00:00Z")
         },
         {
             tmu_code: "STU005",
@@ -64,8 +64,8 @@ const seedData = {
             password: "password123",
             department: "Computer Science",
             is_active: true,
-            created_at: new Date("2024-01-19"),
-            last_login: new Date("2025-06-07")
+            created_at: new Date("2024-01-19T00:00:00Z"),
+            last_login: new Date("2025-06-07T00:00:00Z")
         },
         {
             tmu_code: "STU006",
@@ -76,8 +76,8 @@ const seedData = {
             password: "password123",
             department: "Electronics",
             is_active: true,
-            created_at: new Date("2024-01-20"),
-            last_login: new Date("2025-06-06")
+            created_at: new Date("2024-01-20T00:00:00Z"),
+            last_login: new Date("2025-06-06T00:00:00Z")
         },
         {
             tmu_code: "STU007",
@@ -88,8 +88,8 @@ const seedData = {
             password: "password123",
             department: "Mechanical",
             is_active: true,
-            created_at: new Date("2024-01-21"),
-            last_login: new Date("2025-06-05")
+            created_at: new Date("2024-01-21T00:00:00Z"),
+            last_login: new Date("2025-06-05T00:00:00Z")
         },
         {
             tmu_code: "STU008",
@@ -100,8 +100,8 @@ const seedData = {
             password: "password123",
             department: "Civil",
             is_active: true,
-            created_at: new Date("2024-01-22"),
-            last_login: new Date("2025-06-04")
+            created_at: new Date("2024-01-22T00:00:00Z"),
+            last_login: new Date("2025-06-04T00:00:00Z")
         },
         {
             tmu_code: "STU009",
@@ -112,8 +112,8 @@ const seedData = {
             password: "password123",
             department: "Computer Science",
             is_active: true,
-            created_at: new Date("2024-01-23"),
-            last_login: new Date("2025-06-03")
+            created_at: new Date("2024-01-23T00:00:00Z"),
+            last_login: new Date("2025-06-03T00:00:00Z")
         },
         {
             tmu_code: "STU010",
@@ -124,8 +124,8 @@ const seedData = {
             password: "password123",
             department: "Electronics",
             is_active: true,
-            created_at: new Date("2024-01-24"),
-            last_login: new Date("2025-06-02")
+            created_at: new Date("2024-01-24T00:00:00Z"),
+            last_login: new Date("2025-06-02T00:00:00Z")
         },
         {
             tmu_code: "STU011",
@@ -136,8 +136,8 @@ const seedData = {
             password: "password123",
             department: "Mechanical",
             is_active: true,
-            created_at: new Date("2024-01-25"),
-            last_login: new Date("2025-06-01")
+            created_at: new Date("2024-01-25T00:00:00Z"),
+            last_login: new Date("2025-06-01T00:00:00Z")
         },
         {
             tmu_code: "STU012",
@@ -148,8 +148,8 @@ const seedData = {
             password: "password123",
             department: "Civil",
             is_active: true,
-            created_at: new Date("2024-01-26"),
-            last_login: new Date("2025-05-31")
+            created_at: new Date("2024-01-26T00:00:00Z"),
+            last_login: new Date("2025-05-31T00:00:00Z")
         },
         {
             tmu_code: "STU013",
@@ -160,8 +160,8 @@ const seedData = {
             password: "password123",
             department: "Computer Science",
             is_active: true,
-            created_at: new Date("2024-01-27"),
-            last_login: new Date("2025-05-30")
+            created_at: new Date("2024-01-27T00:00:00Z"),
+            last_login: new Date("2025-05-30T00:00:00Z")
         },
         {
             tmu_code: "STU014",
@@ -172,8 +172,8 @@ const seedData = {
             password: "password123",
             department: "Electronics",
             is_active: true,
-            created_at: new Date("2024-01-28"),
-            last_login: new Date("2025-05-29")
+            created_at: new Date("2024-01-28T00:00:00Z"),
+            last_login: new Date("2025-05-29T00:00:00Z")
         },
         {
             tmu_code: "STU015",
@@ -184,8 +184,8 @@ const seedData = {
             password: "password123",
             department: "Mechanical",
             is_active: true,
-            created_at: new Date("2024-01-29"),
-            last_login: new Date("2025-05-28")
+            created_at: new Date("2024-01-29T00:00:00Z"),
+            last_login: new Date("2025-05-28T00:00:00Z")
         },
         {
             tmu_code: "STU016",
@@ -196,8 +196,8 @@ const seedData = {
             password: "password123",
             department: "Civil",
             is_active: true,
-            created_at: new Date("2024-01-30"),
-            last_login: new Date("2025-05-27")
+            created_at: new Date("2024-01-30T00:00:00Z"),
+            last_login: new Date("2025-05-27T00:00:00Z")
         },
         {
             tmu_code: "STU017",
@@ -208,8 +208,8 @@ const seedData = {
             password: "password123",
             department: "Computer Science",
             is_active: true,
-            created_at: new Date("2024-01-31"),
-            last_login: new Date("2025-05-26")
+            created_at: new Date("2024-01-31T00:00:00Z"),
+            last_login: new Date("2025-05-26T00:00:00Z")
         },
         {
             tmu_code: "STU018",
@@ -220,8 +220,8 @@ const seedData = {
             password: "password123",
             department: "Electronics",
             is_active: true,
-            created_at: new Date("2024-02-01"),
-            last_login: new Date("2025-05-25")
+            created_at: new Date("2024-02-01T00:00:00Z"),
+            last_login: new Date("2025-05-25T00:00:00Z")
         },
         {
             tmu_code: "STU019",
@@ -232,8 +232,8 @@ const seedData = {
             password: "password123",
             department: "Mechanical",
             is_active: true,
-            created_at: new Date("2024-02-02"),
-            last_login: new Date("2025-05-24")
+            created_at: new Date("2024-02-02T00:00:00Z"),
+            last_login: new Date("2025-05-24T00:00:00Z")
         },
         {
             tmu_code: "STU020",
@@ -244,8 +244,8 @@ const seedData = {
             password: "password123",
             department: "Civil",
             is_active: true,
-            created_at: new Date("2024-02-03"),
-            last_login: new Date("2025-05-23")
+            created_at: new Date("2024-02-03T00:00:00Z"),
+            last_login: new Date("2025-05-23T00:00:00Z")
         },
         
         // Employees (10 entries)
@@ -258,8 +258,8 @@ const seedData = {
             password: "password123",
             department: "Computer Science",
             is_active: true,
-            created_at: new Date("2020-01-15"),
-            last_login: new Date("2025-06-11")
+            created_at: new Date("2020-01-15T00:00:00Z"),
+            last_login: new Date("2025-06-11T00:00:00Z")
         },
         {
             tmu_code: "EMP002",
@@ -270,8 +270,8 @@ const seedData = {
             password: "password123",
             department: "Electronics",
             is_active: true,
-            created_at: new Date("2019-03-20"),
-            last_login: new Date("2025-06-10")
+            created_at: new Date("2019-03-20T00:00:00Z"),
+            last_login: new Date("2025-06-10T00:00:00Z")
         },
         {
             tmu_code: "EMP003",
@@ -282,8 +282,8 @@ const seedData = {
             password: "password123",
             department: "Mechanical",
             is_active: true,
-            created_at: new Date("2018-07-10"),
-            last_login: new Date("2025-06-09")
+            created_at: new Date("2018-07-10T00:00:00Z"),
+            last_login: new Date("2025-06-09T00:00:00Z")
         },
         {
             tmu_code: "EMP004",
@@ -294,8 +294,8 @@ const seedData = {
             password: "password123",
             department: "Civil",
             is_active: true,
-            created_at: new Date("2021-01-05"),
-            last_login: new Date("2025-06-08")
+            created_at: new Date("2021-01-05T00:00:00Z"),
+            last_login: new Date("2025-06-08T00:00:00Z")
         },
         {
             tmu_code: "EMP005",
@@ -306,8 +306,8 @@ const seedData = {
             password: "password123",
             department: "Computer Science",
             is_active: true,
-            created_at: new Date("2017-09-12"),
-            last_login: new Date("2025-06-07")
+            created_at: new Date("2017-09-12T00:00:00Z"),
+            last_login: new Date("2025-06-07T00:00:00Z")
         },
         {
             tmu_code: "EMP006",
@@ -318,8 +318,8 @@ const seedData = {
             password: "password123",
             department: "Electronics",
             is_active: true,
-            created_at: new Date("2020-05-18"),
-            last_login: new Date("2025-06-06")
+            created_at: new Date("2020-05-18T00:00:00Z"),
+            last_login: new Date("2025-06-06T00:00:00Z")
         },
         {
             tmu_code: "EMP007",
@@ -330,8 +330,8 @@ const seedData = {
             password: "password123",
             department: "Mechanical",
             is_active: true,
-            created_at: new Date("2019-11-25"),
-            last_login: new Date("2025-06-05")
+            created_at: new Date("2019-11-25T00:00:00Z"),
+            last_login: new Date("2025-06-05T00:00:00Z")
         },
         {
             tmu_code: "EMP008",
@@ -342,8 +342,8 @@ const seedData = {
             password: "password123",
             department: "Civil",
             is_active: true,
-            created_at: new Date("2022-02-14"),
-            last_login: new Date("2025-06-04")
+            created_at: new Date("2022-02-14T00:00:00Z"),
+            last_login: new Date("2025-06-04T00:00:00Z")
         },
         {
             tmu_code: "EMP009",
@@ -354,8 +354,8 @@ const seedData = {
             password: "password123",
             department: "Computer Science",
             is_active: true,
-            created_at: new Date("2016-08-30"),
-            last_login: new Date("2025-06-03")
+            created_at: new Date("2016-08-30T00:00:00Z"),
+            last_login: new Date("2025-06-03T00:00:00Z")
         },
         {
             tmu_code: "EMP010",
@@ -366,8 +366,8 @@ const seedData = {
             password: "password123",
             department: "Electronics",
             is_active: true,
-            created_at: new Date("2021-06-22"),
-            last_login: new Date("2025-06-02")
+            created_at: new Date("2021-06-22T00:00:00Z"),
+            last_login: new Date("2025-06-02T00:00:00Z")
         },
 
         // Mess Staff (3 entries)
@@ -380,8 +380,8 @@ const seedData = {
             password: "password123",
             department: "Mess Operations",
             is_active: true,
-            created_at: new Date("2022-01-10"),
-            last_login: new Date("2025-06-12")
+            created_at: new Date("2022-01-10T00:00:00Z"),
+            last_login: new Date("2025-06-12T00:00:00Z")
         },
         {
             tmu_code: "STAFF002",
@@ -392,8 +392,8 @@ const seedData = {
             password: "password123",
             department: "Mess Operations",
             is_active: true,
-            created_at: new Date("2022-03-15"),
-            last_login: new Date("2025-06-11")
+            created_at: new Date("2022-03-15T00:00:00Z"),
+            last_login: new Date("2025-06-11T00:00:00Z")
         },
         {
             tmu_code: "STAFF003",
@@ -404,8 +404,8 @@ const seedData = {
             password: "password123",
             department: "Mess Operations",
             is_active: true,
-            created_at: new Date("2022-05-20"),
-            last_login: new Date("2025-06-10")
+            created_at: new Date("2022-05-20T00:00:00Z"),
+            last_login: new Date("2025-06-10T00:00:00Z")
         },
 
         // HODs (2 entries)
@@ -418,8 +418,8 @@ const seedData = {
             password: "password123",
             department: "Computer Science",
             is_active: true,
-            created_at: new Date("2015-01-01"),
-            last_login: new Date("2025-06-12")
+            created_at: new Date("2015-01-01T00:00:00Z"),
+            last_login: new Date("2025-06-12T00:00:00Z")
         },
         {
             tmu_code: "HOD002",
@@ -430,8 +430,8 @@ const seedData = {
             password: "password123",
             department: "Electronics",
             is_active: true,
-            created_at: new Date("2016-06-15"),
-            last_login: new Date("2025-06-11")
+            created_at: new Date("2016-06-15T00:00:00Z"),
+            last_login: new Date("2025-06-11T00:00:00Z")
         }
     ],
 
@@ -445,7 +445,7 @@ const seedData = {
             confirmation_deadline_description: "Confirm by 7 PM previous day",
             is_active: true,
             updated_by: null, // Will be set to admin user
-            updated_at: new Date("2025-01-01")
+            updated_at: new Date("2025-01-01T00:00:00Z")
         },
         {
             meal_type: "lunch",
@@ -456,7 +456,7 @@ const seedData = {
             confirmation_deadline_description: "Confirm by 10 AM same day",
             is_active: true,
             updated_by: null,
-            updated_at: new Date("2025-01-01")
+            updated_at: new Date("2025-01-01T00:00:00Z")
         },
         {
             meal_type: "snacks",
@@ -467,7 +467,7 @@ const seedData = {
             confirmation_deadline_description: "Confirm by 3 PM same day",
             is_active: true,
             updated_by: null,
-            updated_at: new Date("2025-01-01")
+            updated_at: new Date("2025-01-01T00:00:00Z")
         },
         {
             meal_type: "dinner",
@@ -478,7 +478,7 @@ const seedData = {
             confirmation_deadline_description: "Confirm by 3 PM same day",
             is_active: true,
             updated_by: null,
-            updated_at: new Date("2025-01-01")
+            updated_at: new Date("2025-01-01T00:00:00Z")
         }
     ]
 };

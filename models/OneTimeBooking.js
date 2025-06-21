@@ -1,11 +1,12 @@
 const { getDB } = require('../config/database');
 const { ObjectId } = require('mongodb');
+const { convertToIST, getCurrentISTDate } = require('../utils/helpers');
 
 class OneTimeBooking {
     constructor(data) {
         this.user_id = data.user_id ? new ObjectId(data.user_id) : null;
         this.booking_type = data.booking_type;
-        this.meal_date = new Date(data.meal_date);
+        this.meal_date = convertToIST(data.meal_date);
         this.meal_type = data.meal_type;
         this.guest_details = data.guest_details || null;
         this.amount = data.amount;
@@ -19,7 +20,7 @@ class OneTimeBooking {
             scanner_id: null
         };
         this.booking_notes = data.booking_notes || '';
-        this.created_at = new Date();
+        this.created_at = getCurrentISTDate();
     }
 
     static async create(data) {
@@ -42,7 +43,7 @@ class OneTimeBooking {
         const query = { user_id: new ObjectId(userId) };
         
         if (!includeCompleted) {
-            query.meal_date = { $gte: new Date() };
+            query.meal_date = { $gte: getCurrentISTDate() };
         }
 
         return await db.collection('one_time_bookings').find(query)
@@ -52,7 +53,7 @@ class OneTimeBooking {
 
     static async getBookingsByDate(date, mealType = null) {
         const db = getDB();
-        const query = { meal_date: new Date(date) };
+        const query = { meal_date: convertToIST(date) };
         
         if (mealType) {
             query.meal_type = mealType;
@@ -103,7 +104,7 @@ class OneTimeBooking {
         const db = getDB();
         const updateData = {
             'attendance.attended': attended,
-            'attendance.scanned_at': new Date()
+            'attendance.scanned_at': getCurrentISTDate()
         };
 
         if (scannerId) {
@@ -143,7 +144,7 @@ class OneTimeBooking {
 
     static async getDailyBookingReport(date) {
         const db = getDB();
-        const targetDate = new Date(date);
+        const targetDate = convertToIST(date);
 
         const pipeline = [
             {
@@ -181,17 +182,17 @@ class OneTimeBooking {
         const db = getDB();
         return await db.collection('one_time_bookings').find({
             'payment.status': 'pending',
-            meal_date: { $gte: new Date() }
+            meal_date: { $gte: getCurrentISTDate() }
         }).sort({ meal_date: 1 }).toArray();
     }
 
     static async getNoShowBookings(date, mealType) {
         const db = getDB();
-        const cutoffTime = new Date();
+        const cutoffTime = getCurrentISTDate();
         cutoffTime.setHours(cutoffTime.getHours() - 2); // 2 hours after meal time
 
         return await db.collection('one_time_bookings').find({
-            meal_date: new Date(date),
+            meal_date: convertToIST(date),
             meal_type: mealType,
             'payment.status': 'paid',
             'attendance.attended': null,
@@ -201,8 +202,8 @@ class OneTimeBooking {
 
     static async getMonthlyBookingStats(year, month) {
         const db = getDB();
-        const startDate = new Date(year, month - 1, 1);
-        const endDate = new Date(year, month, 1);
+        const startDate = convertToIST(new Date(year, month - 1, 1));
+        const endDate = convertToIST(new Date(year, month, 1));
 
         const pipeline = [
             {
@@ -238,8 +239,8 @@ class OneTimeBooking {
         // Date range filter
         if (filters.start_date && filters.end_date) {
             query.meal_date = {
-                $gte: new Date(filters.start_date),
-                $lte: new Date(filters.end_date)
+                $gte: convertToIST(filters.start_date),
+                $lte: convertToIST(filters.end_date)
             };
         }
 
@@ -300,7 +301,7 @@ class OneTimeBooking {
             throw new Error('Booking not found');
         }
 
-        if (booking.meal_date <= new Date()) {
+        if (booking.meal_date <= getCurrentISTDate()) {
             throw new Error('Cannot cancel past bookings');
         }
 
@@ -309,7 +310,7 @@ class OneTimeBooking {
             {
                 $set: {
                     'payment.status': booking.payment.status === 'paid' ? 'refunded' : 'cancelled',
-                    cancelled_at: new Date(),
+                    cancelled_at: getCurrentISTDate(),
                     cancellation_reason: reason
                 }
             }
