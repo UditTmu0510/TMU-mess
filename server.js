@@ -3,6 +3,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { connectDB } = require('./config/database');
+const MealFreezeService = require('./services/mealFreezeService');
+const HostelMaster = require('./models/HostelMaster');
 
 // Route imports
 const authRoutes = require('./routes/auth');
@@ -11,6 +13,7 @@ const mealRoutes = require('./routes/meals');
 const bookingRoutes = require('./routes/bookings');
 const adminRoutes = require('./routes/admin');
 const qrRoutes = require('./routes/qr');
+const parentBookingRoutes = require('./routes/ParentBooking');
 
 const app = express();
 
@@ -54,7 +57,8 @@ app.get('/', (req, res) => {
                 meals: '/api/meals',
                 bookings: '/api/bookings',
                 admin: '/api/admin',
-                qr_codes: '/api/qr'
+                qr_codes: '/api/qr',
+                parent_booking: '/api/parent-booking'
             },
             features: [
                 'User Authentication & Authorization',
@@ -90,6 +94,7 @@ app.use('/api/meals', mealRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/qr', qrRoutes);
+app.use('/api/parent-booking', parentBookingRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -155,6 +160,14 @@ const startServer = async () => {
         try {
             await connectDB();
             console.log('✅ Database connected successfully');
+            
+            // Initialize default hostel-mess mappings
+            await HostelMaster.initializeDefaultMappings();
+            
+            // Start meal freeze scheduler (IST timezone aware)
+            MealFreezeService.startFreezeScheduler();
+            console.log('🔄 Meal freeze scheduler started (IST timezone)');
+            
         } catch (dbError) {
             console.warn('⚠️ Database connection failed, server running without DB:', dbError.message);
         }
