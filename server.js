@@ -146,10 +146,9 @@ const PORT = 8080;
 const startServer = async () => {
     try {
         // Start server first, then attempt DB connection
-        app.listen(PORT, '127.0.0.1', () => {
+        app.listen(PORT, () => {
             console.log(`🚀 TMU Mess Management API Server running on port ${PORT}`);
             console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-            console.log(`🌐 Server URL: http://localhost:${PORT}`);
         });
         
         // Attempt DB connection in background
