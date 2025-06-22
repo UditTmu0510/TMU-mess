@@ -21,9 +21,7 @@ const adminController = {
             const startOfWeek = new Date(today);
             startOfWeek.setDate(today.getDate() - today.getDay());
              const mealTimings = await MealTiming.getAll();
-
             mealTimings.sort((a, b) => a.start_time.localeCompare(b.start_time));
-
             const nowInMinutes = now.getHours() * 60 + now.getMinutes();
 
             let currentMealInfo = null;
@@ -36,12 +34,6 @@ const adminController = {
                 const [endHours, endMins] = timing.end_time.split(':');
                 const mealEndMinutes = parseInt(endHours, 10) * 60 + parseInt(endMins, 10);
 
-                console.log(`\nChecking meal: ${timing.meal_type.toUpperCase()}`);
-            console.log(`  - Meal runs from ${mealStartMinutes} to ${mealEndMinutes} minutes.`);
-            console.log(`  - Is current time (${nowInMinutes}) >= start time (${mealStartMinutes})?`, nowInMinutes >= mealStartMinutes);
-            console.log(`  - Is current time (${nowInMinutes}) <= end time (${mealEndMinutes})?`, nowInMinutes <= mealEndMinutes);
-            console.log(`  - Is start time (${mealStartMinutes}) > current time (${nowInMinutes})?`, mealStartMinutes > nowInMinutes);
-            console.log(`  - Is current time (${nowInMinutes}) > end time (${mealEndMinutes})?`, nowInMinutes > mealEndMinutes);
 
                 if (nowInMinutes >= mealStartMinutes && nowInMinutes <= mealEndMinutes) {
                     currentMealInfo = timing;
@@ -64,7 +56,6 @@ const adminController = {
 
      
             const todaysReport = await MealConfirmation.getDailyConfirmationReport(formatDate(today));
-
 
              const formatMealReport = (mealInfo, reports) => {
                 if (!mealInfo) return null;
@@ -111,7 +102,6 @@ const adminController = {
                 }
             ]).toArray();
 
-            // Get monthly revenue
             const monthlyRevenue = await MessSubscription.getMonthlyRevenue(
                 today.getFullYear(), 
                 today.getMonth() + 1

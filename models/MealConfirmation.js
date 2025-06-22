@@ -168,68 +168,68 @@ static async findByUserAndDate(userId, mealDate, mealType = null) {
         return result; // Returns { acknowledged: true, matchedCount: 1, modifiedCount: 1, ... }
     }
 
-    static async getDailyConfirmationReport(date) {
-        const db = getDB();
-        const targetDate = convertToIST(date);
-        
-        const pipeline = [
-            {
-                $match: {
-                    meal_date: targetDate
-                }
-            },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: 'user_id',
-                    foreignField: '_id',
-                    as: 'user'
-                }
-            },
-            {
-                $unwind: '$user'
-            },
-            {
-                $group: {
-                    _id: '$meal_type',
-                    total_confirmations: { $sum: 1 },
-                    attended: {
-                        $sum: {
-                            $cond: [{ $eq: ['$attended', true] }, 1, 0]
-                        }
-                    },
-                    not_attended: {
-                        $sum: {
-                            $cond: [{ $eq: ['$attended', false] }, 1, 0]
-                        }
-                    },
-                    pending: {
-                        $sum: {
-                            $cond: [{ $eq: ['$attended', null] }, 1, 0]
-                        }
-                    },
-                    total_fines: {
-                        $sum: '$fine_applied'
-                    },
-                    confirmations: {
-                        $push: {
-                            user_id: '$user_id',
-                            tmu_code: '$user.tmu_code',
-                            name: '$user.name',
-                            attended: '$attended',
-                            qr_scanned_at: '$qr_scanned_at',
-                            fine_applied: '$fine_applied'
-                        }
+    static async getDailyConfirmationReport(date) { 
+    const db = getDB();
+    const targetDate = new Date(date);
+
+    const pipeline = [
+        {
+            $match: {
+                meal_date: targetDate 
+            }
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'user_id',
+                foreignField: '_id',
+                as: 'user'
+            }
+        },
+        {
+            $unwind: '$user'
+        },
+        {
+            $group: {
+                _id: '$meal_type',
+                total_confirmations: { $sum: 1 },
+                attended: {
+                    $sum: {
+                        $cond: [{ $eq: ['$attended', true] }, 1, 0]
+                    }
+                },
+                not_attended: {
+                    $sum: {
+                        $cond: [{ $eq: ['$attended', false] }, 1, 0]
+                    }
+                },
+                pending: {
+                    $sum: {
+                        $cond: [{ $eq: ['$attended', null] }, 1, 0]
+                    }
+                },
+                total_fines: {
+                    $sum: '$fine_applied'
+                },
+                confirmations: {
+                    $push: {
+                        user_id: '$user_id',
+                        tmu_code: '$user.tmu_code',
+                        name: '$user.name',
+                        attended: '$attended',
+                        qr_scanned_at: '$qr_scanned_at',
+                        fine_applied: '$fine_applied'
                     }
                 }
-            },
-            {
-                $sort: { _id: 1 }
             }
-        ];
+        },
+        {
+            $sort: { _id: 1 }
+        }
+    ];
 
-        return await db.collection('meal_confirmations').aggregate(pipeline).toArray();
-    }
+    return await db.collection('meal_confirmations').aggregate(pipeline).toArray();
+}
 
     static async getNoShowUsers(date, mealType) {
         const db = getDB();
