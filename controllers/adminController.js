@@ -15,23 +15,85 @@ const adminController = {
     // Get admin dashboard data
     getDashboard: async (req, res) => {
         try {
-            const today = getCurrentISTDate();
+             const today = getCurrentISTDate();
+            const now = getCurrentISTDate();
             const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
             const startOfWeek = new Date(today);
             startOfWeek.setDate(today.getDate() - today.getDay());
+             const mealTimings = await MealTiming.getAll();
 
-            // Get basic counts
+            mealTimings.sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+            const nowInMinutes = now.getHours() * 60 + now.getMinutes();
+
+            let currentMealInfo = null;
+            let upcomingMealInfo = null;
+            let lastFinishedMeal = null;
+
+                 for (const timing of mealTimings) {
+                const [startHours, startMins] = timing.start_time.split(':');
+                const mealStartMinutes = parseInt(startHours, 10) * 60 + parseInt(startMins, 10);
+                const [endHours, endMins] = timing.end_time.split(':');
+                const mealEndMinutes = parseInt(endHours, 10) * 60 + parseInt(endMins, 10);
+
+                console.log(`\nChecking meal: ${timing.meal_type.toUpperCase()}`);
+            console.log(`  - Meal runs from ${mealStartMinutes} to ${mealEndMinutes} minutes.`);
+            console.log(`  - Is current time (${nowInMinutes}) >= start time (${mealStartMinutes})?`, nowInMinutes >= mealStartMinutes);
+            console.log(`  - Is current time (${nowInMinutes}) <= end time (${mealEndMinutes})?`, nowInMinutes <= mealEndMinutes);
+            console.log(`  - Is start time (${mealStartMinutes}) > current time (${nowInMinutes})?`, mealStartMinutes > nowInMinutes);
+            console.log(`  - Is current time (${nowInMinutes}) > end time (${mealEndMinutes})?`, nowInMinutes > mealEndMinutes);
+
+                if (nowInMinutes >= mealStartMinutes && nowInMinutes <= mealEndMinutes) {
+                    currentMealInfo = timing;
+                }
+                if (mealStartMinutes > nowInMinutes && !upcomingMealInfo) {
+                    upcomingMealInfo = timing;
+                }
+                if (nowInMinutes > mealEndMinutes) {
+                    lastFinishedMeal = timing;
+                }
+            }
+            
+            if (!upcomingMealInfo && mealTimings.length > 0) {
+                upcomingMealInfo = mealTimings[0];
+            }
+            
             const userStats = await User.findActiveUsers();
             const studentStats = await StudentDetail.getStudentStatistics();
             const employeeStats = await EmployeeDetail.getEmployeeStatistics();
 
-            // Get today's meal confirmations
+     
             const todaysReport = await MealConfirmation.getDailyConfirmationReport(formatDate(today));
 
-            // Get subscription stats
+
+             const formatMealReport = (mealInfo, reports) => {
+                if (!mealInfo) return null;
+                const reportData = reports.find(r => r._id === mealInfo.meal_type);
+                if (reportData) {
+                    return {
+                        _id: reportData._id,
+                        total_confirmations: reportData.total_confirmations,
+                        attended: reportData.attended,
+                        not_attended: reportData.not_attended,
+                        pending: reportData.pending
+                    };
+                }
+                return {
+                    _id: mealInfo.meal_type,
+                    total_confirmations: 0,
+                    attended: 0,
+                    not_attended: 0,
+                    pending: 0
+                };
+            };
+            
+         
+            const currentMealStats = formatMealReport(currentMealInfo, todaysReport);
+            const lastMealStats = formatMealReport(lastFinishedMeal, todaysReport);
+            const upcomingMealStats = formatMealReport(upcomingMealInfo, todaysReport);
             const subscriptionStats = await MessSubscription.getSubscriptionStats();
 
-            // Get outstanding fines
+     
             const db = getDB();
             const outstandingFines = await db.collection('fines').aggregate([
                 {
@@ -68,6 +130,10 @@ const adminController = {
                     attendance: todaysReport.reduce((sum, r) => sum + r.attended, 0),
                     no_shows: todaysReport.reduce((sum, r) => sum + r.not_attended, 0),
                     pending: todaysReport.reduce((sum, r) => sum + r.pending, 0)
+                },live_meal_stats: {
+                    current_meal: currentMealStats,
+                    last_meal: lastMealStats,
+                    upcoming_meal: upcomingMealStats
                 },
                 financial_summary: {
                     monthly_subscription_revenue: monthlyRevenue.total_revenue || 0,

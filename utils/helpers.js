@@ -16,7 +16,7 @@ const convertToIST = (date) => {
 };
 
 const getCurrentISTDate = () => {
-    return convertToIST(new Date());
+    return new Date(); 
 };
 
 // Format date to YYYY-MM-DD string
