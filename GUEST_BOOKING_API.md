@@ -47,6 +47,30 @@ Creates a new meal booking for a specified number of guests.
 
 ---
 
+## 6. Mark Guest Booking as Paid
+
+- **Endpoint:** `POST /api/bookings/guest-meal/:bookingId/mark-as-paid`
+- **Description:** Marks a guest booking as paid. This is to be used by mess staff when they collect the cash payment.
+- **Authorization:** `mess_staff`
+- **URL Parameters:**
+    - `bookingId` (string, required): The ID of the guest booking.
+- **Request Body:** None
+- **Success Response:**
+  - `200 OK`
+  ```json
+  {
+      "message": "Guest booking marked as paid successfully",
+      "booking_id": "60c72b2f9b1d8c001f8e4c6a",
+      "payment_status": "paid",
+      "collected_by": "60c72b2f9b1d8c001f8e4c6b"
+  }
+  ```
+- **Error Response:**
+    - `404 Not Found` if the booking is not found.
+    - `400 Bad Request` if the booking is already paid.
+    - `500 Internal Server Error` on failure.
+---
+
 ## 5. Get Meal Prices
 
 - **Endpoint:** `GET /api/meals/prices`

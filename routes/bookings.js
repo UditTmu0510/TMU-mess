@@ -16,6 +16,13 @@ router.get('/my-guest-bookings',
     bookingController.getMyGuestBookings
 );
 
+router.post(
+    '/guest-meal/:bookingId/mark-as-paid',
+    authenticateToken,
+    authorizeRoles('mess_staff'),
+    bookingController.markGuestBookingAsPaid
+);
+
 // One-time bookings
 // Create employee booking
 router.post('/employee', 

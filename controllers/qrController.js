@@ -538,6 +538,10 @@ async function handleGuestMealAttendance(req, res, bookingId, scannerId) {
                 number_of_guests: booking.number_of_guests,
                 status: 'ATTENDED'
             },
+            booking_details: {
+                total_amount: booking.total_amount,
+                payment_status: booking.payment.status
+            },
             booked_by: {
                 name: booker.name,
                 tmu_code: booker.tmu_code

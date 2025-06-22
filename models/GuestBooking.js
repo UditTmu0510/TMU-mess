@@ -60,6 +60,21 @@ class GuestBooking {
         );
         return result;
     }
+
+    static async markAsPaid(bookingId, scannerId) {
+        const db = getDB();
+        const result = await db.collection('guest_bookings').updateOne(
+            { _id: new ObjectId(bookingId) },
+            { 
+                $set: { 
+                    'payment.status': 'paid',
+                    'payment.paid_at': getCurrentISTDate(),
+                    'payment.payment_collected_by': new ObjectId(scannerId)
+                } 
+            }
+        );
+        return result;
+    }
 }
 
 module.exports = GuestBooking;

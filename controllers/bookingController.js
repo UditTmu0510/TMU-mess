@@ -981,6 +981,36 @@ const bookingController = {
                 details: error.message
             });
         }
+    },
+
+    markGuestBookingAsPaid: async (req, res) => {
+        try {
+            const { bookingId } = req.params;
+            const scannerId = req.user.id;
+
+            const booking = await GuestBooking.findById(bookingId);
+
+            if (!booking) {
+                return res.status(404).json({ error: 'Booking Not Found' });
+            }
+
+            if (booking.payment.status === 'paid') {
+                return res.status(400).json({ error: 'Booking Already Paid' });
+            }
+
+            await GuestBooking.markAsPaid(bookingId, scannerId);
+
+            res.json({
+                message: 'Guest booking marked as paid successfully',
+                booking_id: bookingId,
+                payment_status: 'paid',
+                collected_by: scannerId
+            });
+
+        } catch (error) {
+            console.error('Mark guest booking as paid error:', error);
+            res.status(500).json({ error: 'Failed to mark booking as paid', details: error.message });
+        }
     }
 };
 
