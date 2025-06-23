@@ -36,12 +36,13 @@ class GuestBooking {
         return await db.collection('guest_bookings').findOne({ _id: new ObjectId(bookingId) });
     }
 
-    static async findByBooker(userId) {
-        const db = getDB();
-        return await db.collection('guest_bookings').find({ booked_by: new ObjectId(userId) })
-            .sort({ booking_date: -1 })
-            .toArray();
-    }
+static async findByBooker(userId) {
+    const db = getDB();
+    return await db.collection('guest_bookings').find({ booked_by: new ObjectId(userId) })
+        .sort({ created_at: -1 })
+        .limit(7)
+        .toArray();
+}
 
     static async markAttendance(bookingId, mealType, scannerId) {
         const db = getDB();
