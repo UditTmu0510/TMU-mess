@@ -140,7 +140,7 @@ app.use((req, res) => {
     }
 });
 
-const PORT = 8000;
+const PORT = 8080;
 
 // Start server
 const startServer = async () => {

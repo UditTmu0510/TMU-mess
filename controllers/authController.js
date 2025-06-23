@@ -86,7 +86,6 @@ const authController = {
     login: async (req, res) => {
         try {
             const { tmu_code, password } = req.body;
-
             if (!tmu_code || !password) {
                 return res.status(400).json({
                     error: 'Missing Credentials',

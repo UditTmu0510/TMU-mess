@@ -47,15 +47,15 @@ class MealConfirmation {
 
     // Inside your MealConfirmation Model (e.g., mealConfirmation.model.js)
 
+
 static async findByUserAndDate(userId, mealDate, mealType = null) {
     const db = getDB();
 
-    // Ensure mealDate is treated as a date without time for querying
     const inputDate = convertToIST(mealDate);
     const startOfDay = new Date(inputDate);
-    startOfDay.setUTCHours(0, 0, 0, 0); // Set to start of the day in UTC
+    startOfDay.setUTCHours(0, 0, 0, 0);
     const endOfDay = new Date(inputDate);
-    endOfDay.setUTCHours(23, 59, 59, 999); // Set to end of the day in UTC
+    endOfDay.setUTCHours(23, 59, 59, 999);
 
     const query = {
         user_id: new ObjectId(userId),
@@ -67,14 +67,54 @@ static async findByUserAndDate(userId, mealDate, mealType = null) {
 
     if (mealType) {
         query.meal_type = mealType;
-        // When mealType is provided, we expect a single confirmation, so findOne is appropriate
-        return await db.collection('meal_confirmations').findOne(query);
-    } else {
-        // When mealType is not provided, we want all confirmations for the user on that date
-        return await db.collection('meal_confirmations').find(query).toArray();
     }
-}
 
+    const mealTimings = await db.collection('meal_timings').find({}).sort({ start_time: 1 }).toArray();
+
+    const confirmations = await db.collection('meal_confirmations').find(query).toArray();
+    const confirmationsMap = new Map(confirmations.map(c => [c.meal_type, c]));
+
+    const now = convertToIST(new Date());
+
+    let stopAttendedCheck = false;
+
+    const modifiedMeals = mealTimings.map(timing => {
+        const confirmation = confirmationsMap.get(timing.meal_type);
+        let meal_status = confirmation ? (confirmation.is_freeze ? 'Frozen' : 'Confirmed') : 'Not Confirmed';
+
+        const [endHour, endMinute] = timing.end_time.split(':').map(Number);
+        const mealEndTime = new Date(inputDate);
+        mealEndTime.setHours(endHour, endMinute, 0, 0);
+
+        if (!stopAttendedCheck) {
+            if (now > mealEndTime) {
+          
+                if (confirmation) {
+                    if (confirmation.attended) {
+                        meal_status = 'Attended';
+                    } else {
+                        meal_status = 'Unattended';
+                    }
+                }
+            } else {
+              
+                stopAttendedCheck = true;
+            }
+        }
+
+        return {
+            ...timing,
+            ...confirmation,
+            meal_status: meal_status
+        };
+    });
+
+    if (mealType) {
+        return modifiedMeals.find(m => m.meal_type === mealType) || null;
+    }
+
+    return modifiedMeals;
+}
 
 
     static async findById(confirmationId) {
@@ -175,7 +215,7 @@ static async findByUserAndDate(userId, mealDate, mealType = null) {
     const pipeline = [
         {
             $match: {
-                meal_date: targetDate 
+                meal_date: targetDate // Now this will correctly find the records
             }
         },
         {
