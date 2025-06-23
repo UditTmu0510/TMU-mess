@@ -208,68 +208,113 @@ static async findByUserAndDate(userId, mealDate, mealType = null) {
         return result; // Returns { acknowledged: true, matchedCount: 1, modifiedCount: 1, ... }
     }
 
-    static async getDailyConfirmationReport(date) { 
-    const db = getDB();
-    const targetDate = new Date(date);
+    static async getDailyConfirmationReport(date) {
+        const db = getDB();
+        const now = new Date();
 
-    const pipeline = [
-        {
-            $match: {
-                meal_date: targetDate // Now this will correctly find the records
-            }
-        },
-        {
-            $lookup: {
-                from: 'users',
-                localField: 'user_id',
-                foreignField: '_id',
-                as: 'user'
-            }
-        },
-        {
-            $unwind: '$user'
-        },
-        {
-            $group: {
-                _id: '$meal_type',
-                total_confirmations: { $sum: 1 },
-                attended: {
-                    $sum: {
-                        $cond: [{ $eq: ['$attended', true] }, 1, 0]
-                    }
-                },
-                not_attended: {
-                    $sum: {
-                        $cond: [{ $eq: ['$attended', false] }, 1, 0]
-                    }
-                },
-                pending: {
-                    $sum: {
-                        $cond: [{ $eq: ['$attended', null] }, 1, 0]
-                    }
-                },
-                total_fines: {
-                    $sum: '$fine_applied'
-                },
-                confirmations: {
-                    $push: {
-                        user_id: '$user_id',
-                        tmu_code: '$user.tmu_code',
-                        name: '$user.name',
-                        attended: '$attended',
-                        qr_scanned_at: '$qr_scanned_at',
-                        fine_applied: '$fine_applied'
+        // 1. Fetch meal schedule to determine the day's meal order and timings.
+        const mealTimings = await db.collection('meal_timings').find({ is_active: true }).sort({ start_time: 1 }).toArray();
+        if (mealTimings.length === 0) {
+            return []; // Return empty if no schedule is found
+        }
+        
+        const lastMeal = mealTimings[mealTimings.length - 1];
+        const lastMealStartTime = parseInt(lastMeal.start_time.split(':')[0]) * 60 + parseInt(lastMeal.start_time.split(':')[1]);
+        const currentTime = now.getHours() * 60 + now.getMinutes();
+
+        // 2. Check if the condition is met: is the current time after the start of the day's last meal?
+        const isAfterLastMeal = currentTime >= lastMealStartTime;
+
+        let finalReport = [];
+
+        if (isAfterLastMeal) {
+            // --- CONDITION MET: Run special logic with two separate queries ---
+
+            // Query 1: Get all meals EXCEPT breakfast for the requested date.
+            const todayMeals = mealTimings.slice(1).map(meal => meal.meal_type); // Get all meal types except the first one (breakfast)
+            const startDate = new Date(`${date}T00:00:00.000Z`);
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 1);
+
+            const nonBreakfastPipeline = this.buildPipeline({ $gte: startDate, $lt: endDate }, todayMeals);
+            const nonBreakfastReport = await db.collection('meal_confirmations').aggregate(nonBreakfastPipeline).toArray();
+
+            // Query 2: Get ONLY breakfast for the NEXT day.
+            const nextDay = new Date(startDate);
+            nextDay.setDate(startDate.getDate() + 1);
+            const nextDayEndDate = new Date(nextDay);
+            nextDayEndDate.setDate(nextDay.getDate() + 1);
+            
+            const breakfastPipeline = this.buildPipeline({ $gte: nextDay, $lt: nextDayEndDate }, ["breakfast"]);
+            const breakfastReport = await db.collection('meal_confirmations').aggregate(breakfastPipeline).toArray();
+
+            // Combine the results
+            finalReport = [...nonBreakfastReport, ...breakfastReport].sort((a, b) => {
+                const order = mealTimings.map(m => m.meal_type);
+                return order.indexOf(a._id) - order.indexOf(b._id);
+            });
+
+        } else {
+            // --- CONDITION NOT MET: Run normal logic for the entire requested day ---
+            const startDate = new Date(`${date}T00:00:00.000Z`);
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 1);
+
+            const fullDayPipeline = this.buildPipeline({ $gte: startDate, $lt: endDate });
+            finalReport = await db.collection('meal_confirmations').aggregate(fullDayPipeline).toArray();
+        }
+
+        return finalReport;
+    }
+
+
+     static buildPipeline(dateRange, mealTypes = null) {
+        const matchStage = {
+            meal_date: dateRange
+        };
+
+        if (mealTypes) {
+            matchStage.meal_type = { $in: mealTypes };
+        }
+
+        return [
+            { $match: matchStage },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'user_id',
+                    foreignField: '_id',
+                    as: 'user'
+                }
+            },
+            { $unwind: '$user' },
+            {
+                $group: {
+                    _id: '$meal_type',
+                    total_confirmations: { $sum: 1 },
+                    attended: { $sum: { $cond: [{ $eq: ['$attended', true] }, 1, 0] } },
+                    not_attended: { $sum: { $cond: [{ $eq: ['$attended', false] }, 1, 0] } },
+                    pending: { $sum: { $cond: [{ $eq: ['$attended', null] }, 1, 0] } },
+                    total_fines: { $sum: '$fine_applied' },
+                    confirmations: {
+                        $push: {
+                            user_id: '$user_id',
+                            tmu_code: '$user.tmu_code',
+                            name: '$user.name',
+                            attended: '$attended',
+                            qr_scanned_at: '$qr_scanned_at',
+                            fine_applied: '$fine_applied'
+                        }
                     }
                 }
-            }
-        },
-        {
-            $sort: { _id: 1 }
-        }
-    ];
+            },
+            { $sort: { _id: 1 } }
+        ];
+    }
 
-    return await db.collection('meal_confirmations').aggregate(pipeline).toArray();
-}
+
+    
+
 
     static async getNoShowUsers(date, mealType) {
         const db = getDB();
