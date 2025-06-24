@@ -76,29 +76,27 @@ static async findByUserAndDate(userId, mealDate, mealType = null) {
 
     const now = convertToIST(new Date());
 
-    let stopAttendedCheck = false;
+    const now_new = new Date(now);
+
+
 
     const modifiedMeals = mealTimings.map(timing => {
         const confirmation = confirmationsMap.get(timing.meal_type);
-        let meal_status = confirmation ? (confirmation.is_freeze ? 'Frozen' : 'Confirmed') : 'Not Confirmed';
+ let meal_status = confirmation ? 'Confirmed' : 'Not Confirmed';
 
-        const [endHour, endMinute] = timing.end_time.split(':').map(Number);
-        const mealEndTime = new Date(inputDate);
-        mealEndTime.setHours(endHour, endMinute, 0, 0);
+const mealEndTime = new Date(now_new); 
+const [hours, minutes, seconds] = timing.end_time.split(':');
+mealEndTime.setUTCHours(hours, minutes, seconds, 0);
 
-        if (!stopAttendedCheck) {
-            if (now > mealEndTime) {
-          
-                if (confirmation) {
-                    if (confirmation.attended) {
-                        meal_status = 'Attended';
-                    } else {
-                        meal_status = 'Unattended';
-                    }
-                }
+
+
+    if (now_new > mealEndTime) {
+            if (confirmation) {
+                // Use a clear ternary operator: if attended is true, 'Attended', else 'Unattended'.
+                meal_status = confirmation.attended ? 'Attended' : 'Unattended';
             } else {
-              
-                stopAttendedCheck = true;
+                // Optional: Handle case where time has passed but there was no confirmation
+                meal_status = 'Not Confirmed';
             }
         }
 
