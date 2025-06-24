@@ -204,9 +204,19 @@ confirmMeal: async (req, res) => {
 
                 try {
                     // Check if confirmation already exists
+                 
                     const existingConfirmation = await MealConfirmation.findByUserAndDate(
-                        userId, parsedDate, mealType
+                        userId, parsedDate, mealType,true
                     );
+
+
+                    console.log('Existing Confirmation:', existingConfirmation);
+
+
+
+                    
+
+
 
                     if (isSelected) {
                         // User wants to confirm this meal

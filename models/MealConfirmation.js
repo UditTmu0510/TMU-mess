@@ -48,7 +48,7 @@ class MealConfirmation {
     // Inside your MealConfirmation Model (e.g., mealConfirmation.model.js)
 
 
-static async findByUserAndDate(userId, mealDate, mealType = null) {
+static async findByUserAndDate(userId, mealDate, mealType = null, returnConfirmationsOnly = false) {
     const db = getDB();
 
     const inputDate = convertToIST(mealDate);
@@ -57,6 +57,7 @@ static async findByUserAndDate(userId, mealDate, mealType = null) {
     const endOfDay = new Date(inputDate);
     endOfDay.setUTCHours(23, 59, 59, 999);
 
+
     const query = {
         user_id: new ObjectId(userId),
         meal_date: {
@@ -64,38 +65,49 @@ static async findByUserAndDate(userId, mealDate, mealType = null) {
             $lte: endOfDay
         }
     };
+    
+  if (returnConfirmationsOnly) {
+   if (mealType) {
+        query.meal_type = mealType;
+        // When mealType is provided, we expect a single confirmation, so findOne is appropriate
+        return await db.collection('meal_confirmations').findOne(query);
+    } else {
+        // When mealType is not provided, we want all confirmations for the user on that date
+        return await db.collection('meal_confirmations').find(query).toArray();
+    }
+
+}
+
 
     if (mealType) {
         query.meal_type = mealType;
     }
 
-    const mealTimings = await db.collection('meal_timings').find({}).sort({ start_time: 1 }).toArray();
-
+    // First, get the confirmations since they might be all we need.
     const confirmations = await db.collection('meal_confirmations').find(query).toArray();
+  
+    // **NEW LOGIC**: If the flag is true, return confirmations immediately.
+    // This is efficient because it skips all the subsequent processing.
+  
+
+    // The rest of the function remains the same for the default behavior.
+    const mealTimings = await db.collection('meal_timings').find({}).sort({ start_time: 1 }).toArray();
     const confirmationsMap = new Map(confirmations.map(c => [c.meal_type, c]));
-
     const now = convertToIST(new Date());
-
     const now_new = new Date(now);
-
-
 
     const modifiedMeals = mealTimings.map(timing => {
         const confirmation = confirmationsMap.get(timing.meal_type);
- let meal_status = confirmation ? 'Confirmed' : 'Not Confirmed';
+        let meal_status = confirmation ? 'Confirmed' : 'Not Confirmed';
 
-const mealEndTime = new Date(now_new); 
-const [hours, minutes, seconds] = timing.end_time.split(':');
-mealEndTime.setUTCHours(hours, minutes, seconds, 0);
+        const mealEndTime = new Date(now_new); 
+        const [hours, minutes, seconds] = timing.end_time.split(':');
+        mealEndTime.setUTCHours(hours, minutes, seconds, 0);
 
-
-
-    if (now_new > mealEndTime) {
+        if (now_new > mealEndTime) {
             if (confirmation) {
-                // Use a clear ternary operator: if attended is true, 'Attended', else 'Unattended'.
                 meal_status = confirmation.attended ? 'Attended' : 'Unattended';
             } else {
-                // Optional: Handle case where time has passed but there was no confirmation
                 meal_status = 'Not Confirmed';
             }
         }
