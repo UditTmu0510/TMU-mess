@@ -71,7 +71,7 @@ app.get('/', (req, res) => {
         health_check: '/health',
         status: 'operational',
         database: 'connected',
-        timestamp: new Date().toISOString()
+        timestamp: getCurrentISTDate() // Use IST for timestamp
     });
 });
 
@@ -79,7 +79,7 @@ app.get('/', (req, res) => {
 app.get('/health', (req, res) => {
     res.json({
         status: 'OK',
-        timestamp: new Date().toISOString(),
+        timestamp: getCurrentISTDate(), // Use IST for timestamp
         uptime: process.uptime()
     });
 });

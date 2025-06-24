@@ -4,7 +4,11 @@ const MealConfirmation = require('../models/MealConfirmation');
 const MessSubscription = require('../models/MessSubscription');
 const Fine = require('../models/Fine');
 const User = require('../models/User');
-const { formatDate, isDateInPast, calculateMonthKey, convertToIST, getCurrentISTDate } = require('../utils/helpers');
+const {
+    getCurrentDateInIST,
+    convertToIST,
+    formatDateInIST
+} = require('../utils/date');
 const { MEAL_TYPES, FINE_MULTIPLIERS } = require('../utils/constants');
 
 const mealController = {
@@ -162,7 +166,7 @@ confirmMeal: async (req, res) => {
         };
 
         const today = getCurrentISTDate();
-        today.setUTCHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
 
         // Process each day's confirmations
         for (const dayData of weeklyConfirmations) {
@@ -342,7 +346,7 @@ getWeeklyMealConfirmationStatus: async (req, res) => {
         const userId = req.user.id;
 
         const today = getCurrentISTDate();
-        today.setUTCHours(0, 0, 0, 0); // Normalize to the start of today in UTC
+        today.setHours(0, 0, 0, 0); // Normalize to the start of today in IST
 
         const weeklyStatus = [];
 
@@ -372,11 +376,11 @@ getWeeklyMealConfirmationStatus: async (req, res) => {
 
         // 2. Define the date range for fetching confirmed meals
         const startDate = new Date(today.getTime());
-        startDate.setUTCHours(0, 0, 0, 0);
+        startDate.setHours(0, 0, 0, 0);
 
         const endDate = new Date(today.getTime());
         endDate.setDate(today.getDate() + 6);
-        endDate.setUTCHours(23, 59, 59, 999);
+        endDate.setHours(23, 59, 59, 999);
 
         // 3. Fetch all confirmed meals for the user within this 7-day range
         // Ensure your MealConfirmation.getUserConfirmationsForDateRange fetches 'is_freeze' field.
@@ -386,8 +390,8 @@ getWeeklyMealConfirmationStatus: async (req, res) => {
 
         // 4. Populate the weekly status with actual confirmed meals and their freeze status
         confirmedMeals.forEach(meal => {
-            const mealDate = convertToIST(meal.meal_date);
-            mealDate.setUTCHours(0,0,0,0); // Normalize meal date from DB
+            const mealDate = convertToIST(meal.meal_date); // Ensure it's an IST date object
+            mealDate.setHours(0,0,0,0); // Normalize meal date from DB to start of day IST
 
             const dayIndex = Math.floor((mealDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -457,7 +461,7 @@ getWeeklyMealConfirmationStatus: async (req, res) => {
     getTodaysMeals: async (req, res) => {
         try {
             const userId = req.user.id;
-            const today = formatDate(getCurrentISTDate());
+            const today = formatDateInIST(new Date(), 'yyyy-MM-dd');
 
             const todaysMeals = await MealConfirmation.findByUserAndDate(userId, today);
             const mealTimings = await MealTiming.getAll();
@@ -503,8 +507,8 @@ getWeeklyMealConfirmationStatus: async (req, res) => {
             const userId = req.user.id;
             const { week_start } = req.query;
             
-            const startDate = week_start ? convertToIST(week_start) : (() => {
-                const today = getCurrentISTDate();
+            const startDate = week_start ? new Date(week_start) : (() => {
+                const today = new Date();
                 const start = new Date(today);
                 start.setDate(today.getDate() - today.getDay()); // Start of current week
                 return start;
@@ -709,7 +713,7 @@ getWeeklyMealConfirmationStatus: async (req, res) => {
                     user_id: confirmation.user_id,
                     fine_type: 'no_show',
                     amount: fine_amount,
-                    reason: `No-show fine for ${confirmation.meal_type} meal on ${formatDate(confirmation.meal_date)}`,
+                    reason: `No-show fine for ${confirmation.meal_type} meal on ${formatDateInIST(confirmation.meal_date, 'yyyy-MM-dd')}`,
                     related_confirmation_id: confirmationId
                 });
             }

@@ -5,8 +5,9 @@ let client = null;
 
 const connectDB = async () => {
     try {
-        const MONGODB_URI = 'mongodb+srv://iprgenix:Rtv5Dk4n18MgArab@tmuapp.f1rlneb.mongodb.net/tmu_app?retryWrites=true&w=majority&appName=tmuapp';
-        
+        // const MONGODB_URI = 'mongodb+srv://iprgenix:Rtv5Dk4n18MgArab@tmuapp.f1rlneb.mongodb.net/tmu_app?retryWrites=true&w=majority&appName=tmuapp' || ''; 
+        const MONGODB_URI = 'mongodb://localhost:27017/tmu_app_new';
+
         client = new MongoClient(MONGODB_URI, {
             useUnifiedTopology: true,
         });

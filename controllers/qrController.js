@@ -7,7 +7,12 @@ const MealConfirmation = require('../models/MealConfirmation');
 const MessSubscription = require('../models/MessSubscription');
 const MealTiming = require('../models/MealTiming');
 const { MEAL_TYPES } = require('../utils/constants');
-const { convertToIST, getCurrentISTDate } = require('../utils/helpers');
+const {
+    getCurrentDateInIST,
+    formatDateInIST,
+    getStartOfDayInIST,
+    convertToIST
+} = require('../utils/date');
 const GuestBooking = require('../models/GuestBooking');
 
 /**
@@ -88,7 +93,8 @@ const qrController = {
             }
 
             const [hours, minutes, seconds] = lastMealEndTime.split(':').map(Number);
-            const expiryDate = new Date(booking.booking_date);
+            // Convert booking_date to IST before setting time components
+            const expiryDate = convertToIST(booking.booking_date);
             expiryDate.setHours(hours, minutes, seconds, 0);
             expiryDate.setMinutes(expiryDate.getMinutes() + 30); // Add 30-minute buffer
 
@@ -203,8 +209,8 @@ const qrController = {
             }
 
             // Determine current meal type based on time
-            const now = getCurrentISTDate();
-            const currentTime24 = now.toISOString().slice(11, 19); // HH:MM:SS format from ISO string
+            const now = getCurrentDateInIST();
+            const currentTime24 = formatDateInIST(now, 'HH:mm:ss');
             
             const mealTimings = await MealTiming.getAll();
             let currentMealType = null;
@@ -224,8 +230,7 @@ const qrController = {
             }
 
             // Check if user has active subscription for this meal type
-            const today = getCurrentISTDate();
-            today.setHours(0, 0, 0, 0);
+            const today = getStartOfDayInIST(new Date());
             
             const subscriptionStatus = await MessSubscription.checkUserSubscriptionStatus(
                 userId, currentMealType, today
@@ -261,7 +266,7 @@ const qrController = {
 
                 const attendanceData = {
                     attended: true,
-                    attended_at: getCurrentISTDate(),
+                    attended_at: new Date(),
                     scanner_id: scannerId,
                     scan_method: 'qr_code'
                 };
@@ -284,7 +289,7 @@ const qrController = {
                     notes: 'Walk-in attendance via QR scan',
                     meal_cost: 0, // Covered by subscription
                     attended: true,
-                    attended_at: getCurrentISTDate(),
+                    attended_at: new Date(),
                     scanner_id: scannerId,
                     scan_method: 'qr_code',
                     is_freeze: false
@@ -388,8 +393,8 @@ res.status(200).json({
      */
     getCurrentMealStatus: async (req, res) => {
         try {
-            const now = getCurrentISTDate();
-            const currentTime24 = now.toISOString().slice(11, 19);
+            const now = getCurrentDateInIST();
+            const currentTime24 = formatDateInIST(now, 'HH:mm:ss');
             
             const mealTimings = await MealTiming.getAll();
             let activeMeal = null;
@@ -498,8 +503,8 @@ async function handleGuestMealAttendance(req, res, bookingId, scannerId) {
             return res.status(404).json({ error: 'Guest Booking Not Found' });
         }
 
-        const now = getCurrentISTDate();
-        const currentTime24 = now.toISOString().slice(11, 19);
+        const now = getCurrentDateInIST();
+        const currentTime24 = formatDateInIST(now, 'HH:mm:ss');
 
         const mealTimings = await MealTiming.getAll();
         let currentMealType = null;
@@ -546,7 +551,7 @@ async function handleGuestMealAttendance(req, res, bookingId, scannerId) {
                 name: booker.name,
                 tmu_code: booker.tmu_code
             },
-            scanned_at: getCurrentISTDate()
+            scanned_at: new Date()
         });
     } catch (error) {
         console.error('Guest meal attendance error:', error);

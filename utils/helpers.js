@@ -1,105 +1,10 @@
 const { ObjectId } = require('mongodb');
-
-/**
- * Date and time utility functions
- */
-
-const convertToIST = (date) => {
-    if (!date) return null;
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return null;
-    
-    // IST is UTC+5:30
-    const offset = 5.5 * 60 * 60 * 1000;
-    const istDate = new Date(d.getTime() + offset);
-    return istDate;
-};
-
-const getCurrentISTDate = () => {
-    return new Date(); 
-};
-
-// Format date to YYYY-MM-DD string
-const formatDate = (date) => {
-    if (!date) return null;
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return null;
-    
-    return d.toISOString().split('T')[0];
-};
-
-// Format datetime to ISO string
-const formatDateTime = (date) => {
-    if (!date) return null;
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return null;
-    
-    return d.toISOString();
-};
-
-// Check if a date is in the past
-const isDateInPast = (date) => {
-    const inputDate = new Date(date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set to start of day
-    inputDate.setHours(0, 0, 0, 0); // Set to start of day
-    
-    return inputDate < today;
-};
-
-// Add days to a date
-const addDays = (date, days) => {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-};
-
-// Calculate date range for queries
-const calculateDateRange = (startDate, endDate) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    // Set start to beginning of day
-    start.setHours(0, 0, 0, 0);
-    
-    // Set end to end of day
-    end.setHours(23, 59, 59, 999);
-    
-    return { start, end };
-};
-
-// Format date range for display
-const formatDateRange = (startDate, endDate) => {
-    return {
-        start: formatDate(startDate),
-        end: formatDate(endDate),
-        duration_days: Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24))
-    };
-};
-
-// Get start and end of current week
-const getCurrentWeekRange = () => {
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay()); // Sunday
-    startOfWeek.setHours(0, 0, 0, 0);
-    
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6); // Saturday
-    endOfWeek.setHours(23, 59, 59, 999);
-    
-    return { start: startOfWeek, end: endOfWeek };
-};
-
-// Get start and end of current month
-const getCurrentMonthRange = () => {
-    const today = new Date();
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    endOfMonth.setHours(23, 59, 59, 999);
-    
-    return { start: startOfMonth, end: endOfMonth };
-};
+const {
+    addDays,
+    formatDateInIST,
+    getStartOfDayInIST,
+    getEndOfDayInIST
+} = require('./date');
 
 // Calculate month key for offense tracking (YYYY-MM format)
 const calculateMonthKey = (date) => {
@@ -190,7 +95,7 @@ const generateRandomString = (length = 10) => {
 
 // Generate QR code data string
 const generateQRData = (userId, mealDate, mealType) => {
-    return `${userId}|${formatDate(mealDate)}|${mealType}`;
+    return `${userId}|${formatDateInIST(mealDate, 'yyyy-MM-dd')}|${mealType}`;
 };
 
 // Parse QR code data string
@@ -294,7 +199,7 @@ const createErrorResponse = (message, details = null, statusCode = 500) => {
         error: message,
         details,
         statusCode,
-        timestamp: new Date().toISOString()
+        timestamp: new Date()
     };
 };
 
@@ -304,7 +209,7 @@ const createSuccessResponse = (message, data = null) => {
         success: true,
         message,
         data,
-        timestamp: new Date().toISOString()
+        timestamp: new Date()
     };
 };
 
@@ -336,7 +241,7 @@ const arrayToCSV = (data, headers = null) => {
 
 // Generate export filename with timestamp
 const generateExportFilename = (prefix, extension = 'csv') => {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const timestamp = formatDateInIST(new Date(), 'yyyy-MM-dd-HH-mm-ss');
     return `${prefix}-${timestamp}.${extension}`;
 };
 
@@ -344,19 +249,6 @@ const generateExportFilename = (prefix, extension = 'csv') => {
  * Time-based helpers
  */
 
-// Check if current time is within meal time window
-const isWithinMealTime = (mealStartTime, mealEndTime) => {
-    const now = new Date();
-    const currentTime = now.getHours() * 60 + now.getMinutes(); // Convert to minutes
-    
-    const [startHour, startMin] = mealStartTime.split(':').map(num => parseInt(num));
-    const [endHour, endMin] = mealEndTime.split(':').map(num => parseInt(num));
-    
-    const startTimeMinutes = startHour * 60 + startMin;
-    const endTimeMinutes = endHour * 60 + endMin;
-    
-    return currentTime >= startTimeMinutes && currentTime <= endTimeMinutes;
-};
 
 // Calculate time difference in hours
 const getHoursDifference = (startDate, endDate) => {
@@ -435,14 +327,6 @@ const maskPhone = (phone) => {
 
 module.exports = {
     // Date and time helpers
-    formatDate,
-    formatDateTime,
-    isDateInPast,
-    addDays,
-    calculateDateRange,
-    formatDateRange,
-    getCurrentWeekRange,
-    getCurrentMonthRange,
     calculateMonthKey,
     
     // Validation helpers
@@ -479,7 +363,6 @@ module.exports = {
     generateExportFilename,
     
     // Time-based helpers
-    isWithinMealTime,
     getHoursDifference,
     formatDuration,
     
@@ -492,7 +375,5 @@ module.exports = {
     generateSecureToken,
     hashString,
     maskEmail,
-    maskPhone,
-    convertToIST,
-    getCurrentISTDate
+    maskPhone
 };

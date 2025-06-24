@@ -7,7 +7,7 @@ const Fine = require('../models/Fine');
 const MessSubscription = require('../models/MessSubscription');
 const OneTimeBooking = require('../models/OneTimeBooking');
 const ParentBooking = require('../models/ParentBooking');
-const { formatDateRange, calculateMonthKey, convertToIST, getCurrentISTDate } = require('../utils/helpers');
+const { convertToIST, getCurrentISTDate } = require('../utils/date');
 
 const userController = {
     // Get current user profile

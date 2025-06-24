@@ -5,7 +5,11 @@ const GuestBooking = require('../models/GuestBooking');
 const MessSubscription = require('../models/MessSubscription');
 const MealTiming = require('../models/MealTiming');
 const User = require('../models/User');
-const { formatDate, isDateInPast, addDays, convertToIST, getCurrentISTDate } = require('../utils/helpers');
+const {
+    isPastDateInIST,
+    getCurrentDateInIST,
+    convertToIST
+} = require('../utils/date');
 const { MEAL_TYPES, BOOKING_TYPES, SUBSCRIPTION_TYPES } = require('../utils/constants');
 
 const bookingController = {
@@ -18,7 +22,9 @@ const bookingController = {
                 return res.status(400).json({ error: 'Invalid input', details: 'Missing required fields.' });
             }
 
-            if (isDateInPast(booking_date)) {
+            const bookingDateIST = convertToIST(new Date(booking_date)); // Convert input date to IST
+
+            if (isPastDateInIST(bookingDateIST)) {
                 return res.status(400).json({ error: 'Invalid Date', details: 'Cannot book for past dates.' });
             }
 
@@ -37,7 +43,7 @@ const bookingController = {
             const bookingData = {
                 booked_by,
                 booked_by_usertype,
-                booking_date,
+                booking_date: bookingDateIST, // Store as IST Date object
                 number_of_guests,
                 meal_types,
                 total_amount: totalAmount
@@ -88,6 +94,8 @@ const bookingController = {
             const { meal_date, meal_type, notes } = req.body;
             const userId = req.user.id;
 
+            const mealDateIST = convertToIST(new Date(meal_date)); // Convert input date to IST
+
             // Validate that user is an employee
             if (req.user.user_type !== 'employee') {
                 return res.status(403).json({
@@ -97,7 +105,7 @@ const bookingController = {
             }
 
             // Check if meal date is not in the past
-            if (isDateInPast(meal_date)) {
+            if (isPastDateInIST(mealDateIST)) {
                 return res.status(400).json({
                     error: 'Invalid Date',
                     details: 'Cannot book meals for past dates'
@@ -116,7 +124,7 @@ const bookingController = {
             // Create employee booking
             const booking = await OneTimeBooking.createEmployeeBooking(
                 userId,
-                meal_date,
+                mealDateIST, // Pass IST Date object
                 meal_type,
                 mealTiming.per_meal_cost,
                 notes
@@ -149,6 +157,8 @@ const bookingController = {
             const { meal_date, meal_type, guest_details, notes } = req.body;
             const bookedBy = req.user.id;
 
+            const mealDateIST = convertToIST(new Date(meal_date)); // Convert input date to IST
+
             // Validate guest details
             if (!guest_details || !guest_details.name || !guest_details.phone) {
                 return res.status(400).json({
@@ -158,7 +168,7 @@ const bookingController = {
             }
 
             // Check if meal date is not in the past
-            if (isDateInPast(meal_date)) {
+            if (isPastDateInIST(mealDateIST)) {
                 return res.status(400).json({
                     error: 'Invalid Date',
                     details: 'Cannot book meals for past dates'
@@ -180,7 +190,7 @@ const bookingController = {
             // Create guest booking
             const booking = await OneTimeBooking.createGuestBooking(
                 guest_details,
-                meal_date,
+                mealDateIST, // Pass IST Date object
                 meal_type,
                 guestAmount,
                 bookedBy,
@@ -215,6 +225,8 @@ const bookingController = {
             const { meal_date, meal_type, parent_details, notes } = req.body;
             const studentId = req.user.id;
 
+            const mealDateIST = convertToIST(new Date(meal_date)); // Convert input date to IST
+
             // Validate that user is a student
             if (req.user.user_type !== 'student') {
                 return res.status(403).json({
@@ -233,7 +245,7 @@ const bookingController = {
             }
 
             // Check if meal date is not in the past
-            if (isDateInPast(meal_date)) {
+            if (isPastDateInIST(mealDateIST)) {
                 return res.status(400).json({
                     error: 'Invalid Date',
                     details: 'Cannot book meals for past dates'
@@ -255,7 +267,7 @@ const bookingController = {
             // Create parent booking
             const booking = await ParentBooking.createParentBooking(
                 studentId,
-                meal_date,
+                mealDateIST, // Pass IST Date object
                 meal_type,
                 parent_details,
                 perParentCost,
@@ -487,6 +499,9 @@ const bookingController = {
             const { subscription_type, meal_types, start_date, end_date } = req.body;
             const userId = req.user.id;
 
+            const startDateIST = convertToIST(new Date(start_date)); // Convert input date to IST
+            const endDateIST = convertToIST(new Date(end_date));   // Convert input date to IST
+
             // Validate subscription type
             if (!SUBSCRIPTION_TYPES.includes(subscription_type)) {
                 return res.status(400).json({
@@ -512,14 +527,14 @@ const bookingController = {
             }
 
             // Validate dates
-            if (isDateInPast(start_date)) {
+            if (isPastDateInIST(startDateIST)) {
                 return res.status(400).json({
                     error: 'Invalid Start Date',
                     details: 'Start date cannot be in the past'
                 });
             }
 
-            if (convertToIST(end_date) <= convertToIST(start_date)) {
+            if (endDateIST <= startDateIST) {
                 return res.status(400).json({
                     error: 'Invalid End Date',
                     details: 'End date must be after start date'
@@ -539,11 +554,11 @@ const bookingController = {
             let subscription;
             if (req.user.user_type === 'student' && subscription_type === 'hostel_student') {
                 subscription = await MessSubscription.createHostelStudentSubscription(
-                    userId, meal_types, start_date, end_date
+                    userId, meal_types, startDateIST, endDateIST // Pass IST Date objects
                 );
             } else if (req.user.user_type === 'employee' && subscription_type === 'employee_monthly') {
                 subscription = await MessSubscription.createEmployeeSubscription(
-                    userId, meal_types, start_date, end_date
+                    userId, meal_types, startDateIST, endDateIST // Pass IST Date objects
                 );
             } else {
                 return res.status(400).json({
@@ -633,7 +648,8 @@ const bookingController = {
             }
 
             // Validate new end date
-            if (convertToIST(new_end_date) <= getCurrentISTDate()) {
+            const newEndDateIST = convertToIST(new Date(new_end_date)); // Convert input date to IST
+            if (newEndDateIST <= getCurrentISTDate()) { // Compare with current IST date
                 return res.status(400).json({
                     error: 'Invalid End Date',
                     details: 'New end date must be in the future'
@@ -642,7 +658,7 @@ const bookingController = {
 
             const result = await MessSubscription.renewSubscription(
                 subscriptionId, 
-                new_end_date, 
+                newEndDateIST, // Pass IST Date object
                 payment_reference
             );
 
