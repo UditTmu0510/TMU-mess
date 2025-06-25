@@ -240,7 +240,7 @@ const qrController = {
 
             // Check if meal was confirmed for today
             const mealConfirmation = await MealConfirmation.findByUserAndDate(
-                userId, today, currentMealType
+                userId, today, currentMealType, true
             );
 
             let attendanceResult;
