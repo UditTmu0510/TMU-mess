@@ -15,8 +15,8 @@ const adminController = {
     // Get admin dashboard data
     getDashboard: async (req, res) => {
         try {
-             const today = getCurrentISTDate();
-            const now = getCurrentISTDate(); 
+             const today = convertToIST(new Date());
+            const now = convertToIST(new Date()); 
             const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
             const startOfWeek = new Date(today);
             startOfWeek.setDate(today.getDate() - today.getDay());
