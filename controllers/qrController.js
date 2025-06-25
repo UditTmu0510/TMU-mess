@@ -203,13 +203,13 @@ const qrController = {
             }
 
             // Determine current meal type based on time
-            const now = getCurrentISTDate();
+            const now = convertToIST(new Date());
             const currentTime24 = now.toISOString().slice(11, 19); // HH:MM:SS format from ISO string
-            
             const mealTimings = await MealTiming.getAll();
             let currentMealType = null;
             
             for (const timing of mealTimings) {
+                console.log(currentTime24, '------',timing.start_time, '------', timing.end_time);
                 if (currentTime24 >= timing.start_time && currentTime24 <= timing.end_time) {
                     currentMealType = timing.meal_type;
                     break;
@@ -498,7 +498,7 @@ async function handleGuestMealAttendance(req, res, bookingId, scannerId) {
             return res.status(404).json({ error: 'Guest Booking Not Found' });
         }
 
-        const now = getCurrentISTDate();
+        const now = convertToIST(new Date());
         const currentTime24 = now.toISOString().slice(11, 19);
 
         const mealTimings = await MealTiming.getAll();

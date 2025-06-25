@@ -16,13 +16,15 @@ const adminController = {
     getDashboard: async (req, res) => {
         try {
              const today = getCurrentISTDate();
-            const now = getCurrentISTDate();
+            const now = getCurrentISTDate(); 
             const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
             const startOfWeek = new Date(today);
             startOfWeek.setDate(today.getDate() - today.getDay());
              const mealTimings = await MealTiming.getAll();
             mealTimings.sort((a, b) => a.start_time.localeCompare(b.start_time));
             const nowInMinutes = now.getHours() * 60 + now.getMinutes();
+            console.log('nowinMinutes:',  now.getHours());
+            console.log('nowinMinutes:',  now.getMinutes());
 
             let currentMealInfo = null;
             let upcomingMealInfo = null;
@@ -30,16 +32,22 @@ const adminController = {
 
                  for (const timing of mealTimings) {
                 const [startHours, startMins] = timing.start_time.split(':');
+                console.log('startHours:', startHours);
+                console.log('startMins:', startMins);
                 const mealStartMinutes = parseInt(startHours, 10) * 60 + parseInt(startMins, 10);
+                // console.log('mealStartMinutes:', mealStartMinutes);
                 const [endHours, endMins] = timing.end_time.split(':');
                 const mealEndMinutes = parseInt(endHours, 10) * 60 + parseInt(endMins, 10);
+                // console.log('mealEndMinutes:', mealEndMinutes);
 
-
+            
                 if (nowInMinutes >= mealStartMinutes && nowInMinutes <= mealEndMinutes) {
                     currentMealInfo = timing;
+                    console.log('Current Meal Info:', currentMealInfo);
                 }
                 if (mealStartMinutes > nowInMinutes && !upcomingMealInfo) {
                     upcomingMealInfo = timing;
+                    console.log('Upcoming Meal Info:', upcomingMealInfo);
                 }
                 if (nowInMinutes > mealEndMinutes) {
                     lastFinishedMeal = timing;
